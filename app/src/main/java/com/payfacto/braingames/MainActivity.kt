@@ -54,11 +54,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        soundManager.release()
-    }
-
     private fun restoreLocale() {
         val tag = runBlocking { preferencesRepository.preferences.first().languageTag }
         if (tag.isNotEmpty()) {

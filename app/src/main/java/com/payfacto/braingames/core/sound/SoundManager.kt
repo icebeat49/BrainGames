@@ -8,6 +8,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * App-wide sound player. The [SoundPool] lives as long as the process and is never
+ * released explicitly: an Activity must not release it, because Activities are
+ * recreated (rotation, theme change) while this singleton survives.
+ */
 @Singleton
 class SoundManager @Inject constructor(
     @ApplicationContext private val context: Context
@@ -35,9 +40,5 @@ class SoundManager @Inject constructor(
     fun play(event: SoundEvent) {
         if (isMuted) return
         soundIds[event]?.let { soundPool.play(it, 1f, 1f, 1, 0, 1f) }
-    }
-
-    fun release() {
-        soundPool.release()
     }
 }
