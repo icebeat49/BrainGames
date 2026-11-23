@@ -1,0 +1,48 @@
+# Gradle / Kotlin
+.gradle/
+build/
+.kotlin/
+.externalNativeBuild/
+.cxx/
+/captures
+
+# Local machine config (SDK path, secrets)
+local.properties
+
+# Build outputs and signing
+*.apk
+*.aab
+*.ap_
+*.dex
+*.keystore
+*.jks
+*.hprof
+
+# IntelliJ / Android Studio: keep shared config (codeStyles, compiler.xml,
+# gradle.xml, misc.xml, runConfigurations.xml, AndroidProjectSystem.xml),
+# ignore per-user and per-machine state.
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/shelf/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetSelector.xml
+.idea/deploymentTargetDropDown.xml
+.idea/deviceManager.xml
+.idea/androidTestResultsUserPreferences.xml
+.idea/appInsightsSettings.xml
+.idea/other.xml
+.idea/studiobot.xml
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">BrainGames</string>
+
+    <!-- Home -->
+    <string name="home_play_sudoku">Sudoku</string>
+    <string name="home_play_kakuro">Kakuro</string>
+    <string name="home_play_wordsearch">Mots Cachés</string>
+    <string name="home_settings">Paramètres</string>
+    <string name="home_desc_sudoku">Remplissez la grille : chaque ligne, colonne et carré contient les chiffres 1–9</string>
+    <string name="home_desc_kakuro">Remplissez les cases pour que chaque suite additionne au bon total</string>
+    <string name="home_desc_wordsearch">Trouvez tous les mots cachés dans la grille</string>
+
+    <!-- Difficulty -->
+    <string name="difficulty_very_easy">Très facile</string>
+    <string name="difficulty_easy">Facile</string>
+    <string name="difficulty_medium">Moyen</string>
+    <string name="difficulty_hard">Difficile</string>
+    <string name="difficulty_expert">Expert</string>
+    <string name="difficulty_select">Choisir un niveau</string>
+
+    <!-- Game UI -->
+    <string name="action_hint">Indice</string>
+    <string name="action_new_puzzle">Nouvelle grille</string>
+    <string name="action_mute">Muet</string>
+    <string name="action_unmute">Son activé</string>
+    <string name="hints_remaining">%1$d indices restants</string>
+
+    <!-- Win -->
+    <string name="win_title">Grille résolue !</string>
+    <string name="win_time">Temps : %1$s</string>
+    <string name="win_play_again">Rejouer</string>
+    <string name="win_home">Accueil</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_theme">Thème de couleur</string>
+    <string name="settings_dark_mode">Apparence</string>
+    <string name="settings_dark_mode_system">Système</string>
+    <string name="settings_dark_mode_light">Clair</string>
+    <string name="settings_dark_mode_dark">Sombre</string>
+    <string name="settings_language">Langue</string>
+    <string name="settings_sound">Effets sonores</string>
+    <string name="settings_lang_english">English</string>
+    <string name="settings_lang_french">Français</string>
+    <string name="settings_lang_system">Système</string>
+
+    <!-- Theme names -->
+    <string name="theme_ocean">Océan</string>
+    <string name="theme_forest">Forêt</string>
+    <string name="theme_sunset">Coucher de soleil</string>
+    <string name="theme_lavender">Lavande</string>
+    <string name="theme_midnight">Minuit</string>
+
+    <!-- Word Search -->
+    <string name="wordsearch_words_found">%1$d / %2$d mots trouvés</string>
+</resources>
