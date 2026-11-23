@@ -6,7 +6,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.feature.home.HomeScreen
@@ -43,9 +42,9 @@ fun AppNavGraph(
 
         composable(
             route = Screen.DifficultyPicker.route,
-            arguments = listOf(navArgument("gameType") { type = NavType.StringType })
+            arguments = listOf(navArgument(Screen.ARG_GAME_TYPE) { type = NavType.StringType })
         ) { backStack ->
-            val gameTypeStr = backStack.arguments?.getString("gameType") ?: GameType.SUDOKU.name
+            val gameTypeStr = backStack.arguments?.getString(Screen.ARG_GAME_TYPE) ?: GameType.SUDOKU.name
             val gameType = runCatching { GameType.valueOf(gameTypeStr) }.getOrDefault(GameType.SUDOKU)
             DifficultyPickerScreen(
                 gameType = gameType,
@@ -61,13 +60,13 @@ fun AppNavGraph(
             )
         }
 
+        // Game screens: the difficulty argument reaches each ViewModel through its
+        // SavedStateHandle, so the screens themselves don't need it.
         composable(
             route = Screen.Sudoku.route,
-            arguments = listOf(navArgument("difficulty") { type = NavType.StringType })
-        ) { backStack ->
-            val diff = parseDifficulty(backStack.arguments?.getString("difficulty"))
+            arguments = listOf(difficultyArgument())
+        ) {
             SudokuScreen(
-                difficulty = diff,
                 soundManager = soundManager,
                 onBack = { navController.popBackStack() }
             )
@@ -75,11 +74,9 @@ fun AppNavGraph(
 
         composable(
             route = Screen.Kakuro.route,
-            arguments = listOf(navArgument("difficulty") { type = NavType.StringType })
-        ) { backStack ->
-            val diff = parseDifficulty(backStack.arguments?.getString("difficulty"))
+            arguments = listOf(difficultyArgument())
+        ) {
             KakuroScreen(
-                difficulty = diff,
                 soundManager = soundManager,
                 onBack = { navController.popBackStack() }
             )
@@ -87,11 +84,9 @@ fun AppNavGraph(
 
         composable(
             route = Screen.WordSearch.route,
-            arguments = listOf(navArgument("difficulty") { type = NavType.StringType })
-        ) { backStack ->
-            val diff = parseDifficulty(backStack.arguments?.getString("difficulty"))
+            arguments = listOf(difficultyArgument())
+        ) {
             WordSearchScreen(
-                difficulty = diff,
                 soundManager = soundManager,
                 onBack = { navController.popBackStack() }
             )
@@ -99,5 +94,5 @@ fun AppNavGraph(
     }
 }
 
-private fun parseDifficulty(value: String?) =
-    value?.let { runCatching { Difficulty.valueOf(it) }.getOrNull() } ?: Difficulty.MEDIUM
+private fun difficultyArgument() =
+    navArgument(Screen.ARG_DIFFICULTY) { type = NavType.StringType }

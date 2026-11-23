@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
-import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.GameTopBar
@@ -28,13 +27,10 @@ import com.payfacto.braingames.feature.sudoku.ui.NumberPad
 
 @Composable
 fun KakuroScreen(
-    difficulty: Difficulty,
     soundManager: SoundManager,
     onBack: () -> Unit,
     viewModel: KakuroViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(difficulty) { viewModel.init(difficulty) }
-
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.showWin) {

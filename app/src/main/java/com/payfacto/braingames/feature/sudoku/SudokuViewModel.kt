@@ -1,9 +1,12 @@
 package com.payfacto.braingames.feature.sudoku
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.ui.navigation.Screen
+import com.payfacto.braingames.feature.sudoku.data.SudokuBoardSaver
 import com.payfacto.braingames.feature.sudoku.data.SudokuGenerator
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,6 +15,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,38 +36,47 @@ data class SudokuUiState(
 
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     private val repository: PreferencesRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(SudokuUiState())
+    private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
+
+    private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty))
     val state: StateFlow<SudokuUiState> = _state.asStateFlow()
 
     private var timerJob: kotlinx.coroutines.Job? = null
 
-    fun init(difficulty: Difficulty) {
-        _state.update { it.copy(difficulty = difficulty) }
-        newPuzzle(difficulty)
+    init {
         viewModelScope.launch {
-            repository.preferences.collect { prefs ->
-                _state.update { it.copy(isMuted = prefs.isMuted) }
+            repository.preferences.map { it.isMuted }.distinctUntilChanged().collect { muted ->
+                _state.update { it.copy(isMuted = muted) }
             }
+        }
+        val restored = SudokuBoardSaver.restore(savedStateHandle)
+        if (restored == null) {
+            newPuzzle()
+        } else {
+            _state.update { it.copy(board = restored) }
+            if (!restored.isComplete()) startTimer()
         }
     }
 
-    fun newPuzzle(difficulty: Difficulty = _state.value.difficulty) {
+    fun newPuzzle() {
         timerJob?.cancel()
+        SudokuBoardSaver.clear(savedStateHandle)
         _state.update {
             it.copy(
                 isGenerating = true,
                 showWin = false,
                 selectedCell = -1,
                 elapsedSeconds = 0L,
-                isNotesMode = false,
-                difficulty = difficulty
+                isNotesMode = false
             )
         }
         viewModelScope.launch {
             val board = withContext(Dispatchers.Default) { SudokuGenerator.generate(difficulty) }
+            saveBoard(board)
             _state.update {
                 it.copy(
                     board = board,
@@ -91,7 +105,9 @@ class SudokuViewModel @Inject constructor(
             val currentNotes = state.board.notes[idx]
             val newNotes = state.board.notes.copyOf()
             newNotes[idx] = if (number in currentNotes) currentNotes - number else currentNotes + number
-            _state.update { it.copy(board = it.board.copy(notes = newNotes)) }
+            val newBoard = state.board.copy(notes = newNotes)
+            saveBoard(newBoard)
+            _state.update { it.copy(board = newBoard) }
             return
         }
 
@@ -101,6 +117,7 @@ class SudokuViewModel @Inject constructor(
         newNotes[idx] = emptySet()
         val newBoard = state.board.copy(current = newCurrent, notes = newNotes)
         val isComplete = newBoard.isComplete()
+        saveBoard(newBoard)
 
         _state.update {
             it.copy(
@@ -119,7 +136,9 @@ class SudokuViewModel @Inject constructor(
         val newNotes = state.board.notes.copyOf()
         newCurrent[idx] = 0
         newNotes[idx] = emptySet()
-        _state.update { it.copy(board = it.board.copy(current = newCurrent, notes = newNotes)) }
+        val newBoard = state.board.copy(current = newCurrent, notes = newNotes)
+        saveBoard(newBoard)
+        _state.update { it.copy(board = newBoard) }
     }
 
     fun useHint(): Boolean {
@@ -135,6 +154,7 @@ class SudokuViewModel @Inject constructor(
         newNotes[idx] = emptySet()
         val newBoard = board.copy(current = newCurrent, notes = newNotes)
         val isComplete = newBoard.isComplete()
+        saveBoard(newBoard)
         _state.update {
             it.copy(
                 board = newBoard,
@@ -156,6 +176,8 @@ class SudokuViewModel @Inject constructor(
             repository.setMuted(!_state.value.isMuted)
         }
     }
+
+    private fun saveBoard(board: SudokuBoard) = SudokuBoardSaver.save(savedStateHandle, board)
 
     private fun startTimer() {
         timerJob = viewModelScope.launch {

@@ -1,13 +1,16 @@
 package com.payfacto.braingames.feature.wordsearch
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.wordsearch.data.FallbackPuzzles
 import com.payfacto.braingames.feature.wordsearch.data.PuzzleBank
 import com.payfacto.braingames.feature.wordsearch.data.WordBank
+import com.payfacto.braingames.feature.wordsearch.data.WordSearchBoardSaver
 import com.payfacto.braingames.feature.wordsearch.data.WordSearchGenerator
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +20,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,26 +41,35 @@ data class WordSearchUiState(
 @HiltViewModel
 class WordSearchViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: PreferencesRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(WordSearchUiState())
+    private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
+
+    private val _state = MutableStateFlow(WordSearchUiState(difficulty = difficulty))
     val state: StateFlow<WordSearchUiState> = _state.asStateFlow()
 
     private var timerJob: kotlinx.coroutines.Job? = null
 
-    fun init(difficulty: Difficulty) {
-        _state.update { it.copy(difficulty = difficulty) }
-        newPuzzle(difficulty)
+    init {
         viewModelScope.launch {
-            repository.preferences.collect { prefs ->
-                _state.update { it.copy(isMuted = prefs.isMuted) }
+            repository.preferences.map { it.isMuted }.distinctUntilChanged().collect { muted ->
+                _state.update { it.copy(isMuted = muted) }
             }
+        }
+        val restored = WordSearchBoardSaver.restore(savedStateHandle)
+        if (restored == null) {
+            newPuzzle()
+        } else {
+            _state.update { it.copy(board = restored) }
+            if (!restored.isComplete()) startTimer()
         }
     }
 
-    fun newPuzzle(difficulty: Difficulty = _state.value.difficulty) {
+    fun newPuzzle() {
         timerJob?.cancel()
+        WordSearchBoardSaver.clear(savedStateHandle)
         _state.update { it.copy(isLoading = true, showWin = false) }
         viewModelScope.launch {
             val board = withContext(Dispatchers.Default) {
@@ -70,13 +84,13 @@ class WordSearchViewModel @Inject constructor(
                     WordSearchGenerator.generate(words, puzzle, difficulty)
                 } ?: FallbackPuzzles.get(context, difficulty)
             }
+            saveBoard(board)
             _state.update {
                 it.copy(
                     board = board,
                     hintCell = null,
                     showWin = false,
                     elapsedSeconds = 0L,
-                    difficulty = difficulty,
                     hintsRemaining = 5,
                     isLoading = false
                 )
@@ -100,6 +114,7 @@ class WordSearchViewModel @Inject constructor(
         newWords[matchIdx] = newWords[matchIdx].copy(found = true)
         val newBoard = board.copy(words = newWords)
         val isComplete = newBoard.isComplete()
+        saveBoard(newBoard)
 
         _state.update { it.copy(board = newBoard, hintCell = null) }
 
@@ -135,6 +150,8 @@ class WordSearchViewModel @Inject constructor(
     fun toggleMute() {
         viewModelScope.launch { repository.setMuted(!_state.value.isMuted) }
     }
+
+    private fun saveBoard(board: WordSearchBoard) = WordSearchBoardSaver.save(savedStateHandle, board)
 
     private fun startTimer() {
         timerJob = viewModelScope.launch {

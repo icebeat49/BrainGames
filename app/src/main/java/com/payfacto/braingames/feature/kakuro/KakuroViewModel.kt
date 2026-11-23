@@ -1,10 +1,13 @@
 package com.payfacto.braingames.feature.kakuro
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.ui.navigation.Screen
+import com.payfacto.braingames.feature.kakuro.data.KakuroBoardSaver
 import com.payfacto.braingames.feature.kakuro.data.KakuroPuzzleBank
 import com.payfacto.braingames.feature.kakuro.model.KakuroBoard
 import com.payfacto.braingames.feature.kakuro.model.KakuroCell
@@ -14,6 +17,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,35 +36,43 @@ data class KakuroUiState(
 @HiltViewModel
 class KakuroViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: PreferencesRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(KakuroUiState())
+    private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
+
+    private val _state = MutableStateFlow(KakuroUiState(difficulty = difficulty))
     val state: StateFlow<KakuroUiState> = _state.asStateFlow()
 
     private var timerJob: kotlinx.coroutines.Job? = null
 
-    fun init(difficulty: Difficulty) {
-        _state.update { it.copy(difficulty = difficulty) }
-        newPuzzle(difficulty)
+    init {
         viewModelScope.launch {
-            repository.preferences.collect { prefs ->
-                _state.update { it.copy(isMuted = prefs.isMuted) }
+            repository.preferences.map { it.isMuted }.distinctUntilChanged().collect { muted ->
+                _state.update { it.copy(isMuted = muted) }
             }
+        }
+        val restored = KakuroBoardSaver.restore(savedStateHandle)
+        if (restored == null) {
+            newPuzzle()
+        } else {
+            _state.update { it.copy(board = restored) }
+            if (!restored.isComplete()) startTimer()
         }
     }
 
-    fun newPuzzle(difficulty: Difficulty = _state.value.difficulty) {
+    fun newPuzzle() {
         val board = KakuroPuzzleBank.load(context, difficulty)
         timerJob?.cancel()
+        saveBoard(board)
         _state.update {
             it.copy(
                 board = board,
                 selectedCell = null,
                 showWin = false,
                 hintsRemaining = 5,
-                elapsedSeconds = 0L,
-                difficulty = difficulty
+                elapsedSeconds = 0L
             )
         }
         startTimer()
@@ -75,6 +88,7 @@ class KakuroViewModel @Inject constructor(
         val (row, col) = _state.value.selectedCell ?: return
         val newBoard = _state.value.board.withInput(row, col, number)
         val isComplete = newBoard.isComplete()
+        saveBoard(newBoard)
         _state.update { it.copy(board = newBoard, showWin = isComplete) }
         if (isComplete) timerJob?.cancel()
     }
@@ -82,6 +96,7 @@ class KakuroViewModel @Inject constructor(
     fun clearCell() {
         val (row, col) = _state.value.selectedCell ?: return
         val newBoard = _state.value.board.withInput(row, col, 0)
+        saveBoard(newBoard)
         _state.update { it.copy(board = newBoard) }
     }
 
@@ -95,6 +110,7 @@ class KakuroViewModel @Inject constructor(
                 if (cell is KakuroCell.Input && cell.current != cell.solution) {
                     val newBoard = board.withInput(r, c, cell.solution)
                     val isComplete = newBoard.isComplete()
+                    saveBoard(newBoard)
                     _state.update {
                         it.copy(
                             board = newBoard,
@@ -116,6 +132,8 @@ class KakuroViewModel @Inject constructor(
     fun toggleMute() {
         viewModelScope.launch { repository.setMuted(!_state.value.isMuted) }
     }
+
+    private fun saveBoard(board: KakuroBoard) = KakuroBoardSaver.save(savedStateHandle, board)
 
     private fun startTimer() {
         timerJob = viewModelScope.launch {
