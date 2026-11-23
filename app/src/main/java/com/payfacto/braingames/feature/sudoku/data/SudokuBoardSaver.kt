@@ -2,9 +2,10 @@ package com.payfacto.braingames.feature.sudoku.data
 
 import androidx.lifecycle.SavedStateHandle
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
+import com.payfacto.braingames.feature.sudoku.model.SudokuMove
 
 /**
- * Stores the in-progress board in a [SavedStateHandle] using Bundle-friendly types,
+ * Stores the in-progress board and its undo history in a [SavedStateHandle] using Bundle-friendly types,
  * so a ViewModel recreated after process death resumes the same puzzle.
  * Notes are packed as one bitmask per cell (bit n set = note n).
  */
@@ -13,6 +14,8 @@ internal object SudokuBoardSaver {
     private const val KEY_GIVEN = "sudoku_given"
     private const val KEY_CURRENT = "sudoku_current"
     private const val KEY_NOTES = "sudoku_notes"
+    private const val KEY_UNDO = "sudoku_undo"
+    private const val INTS_PER_MOVE = 3
 
     fun save(handle: SavedStateHandle, board: SudokuBoard) {
         handle[KEY_SOLUTION] = board.solution.copyOf()
@@ -34,8 +37,28 @@ internal object SudokuBoardSaver {
         )
     }
 
+    /** Undo history, oldest first, as `index, value, notesBitmask` triples. */
+    fun saveUndo(handle: SavedStateHandle, moves: List<SudokuMove>) {
+        handle[KEY_UNDO] = IntArray(moves.size * INTS_PER_MOVE).also { data ->
+            moves.forEachIndexed { i, move ->
+                val base = i * INTS_PER_MOVE
+                data[base] = move.index
+                data[base + 1] = move.value
+                data[base + 2] = move.notes.toBitmask()
+            }
+        }
+    }
+
+    fun restoreUndo(handle: SavedStateHandle): List<SudokuMove> {
+        val data = handle.get<IntArray>(KEY_UNDO) ?: return emptyList()
+        return List(data.size / INTS_PER_MOVE) { i ->
+            val base = i * INTS_PER_MOVE
+            SudokuMove(index = data[base], value = data[base + 1], notes = data[base + 2].toNoteSet())
+        }
+    }
+
     fun clear(handle: SavedStateHandle) {
-        listOf(KEY_SOLUTION, KEY_GIVEN, KEY_CURRENT, KEY_NOTES).forEach { handle.remove<Any>(it) }
+        listOf(KEY_SOLUTION, KEY_GIVEN, KEY_CURRENT, KEY_NOTES, KEY_UNDO).forEach { handle.remove<Any>(it) }
     }
 
     private fun Set<Int>.toBitmask(): Int = fold(0) { mask, n -> mask or (1 shl n) }

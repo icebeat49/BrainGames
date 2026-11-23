@@ -8,10 +8,12 @@ import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
+import com.payfacto.braingames.core.undo.UndoStack
 import com.payfacto.braingames.feature.sudoku.data.SudokuBoardSaver
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
 import com.payfacto.braingames.feature.sudoku.model.SudokuMode
+import com.payfacto.braingames.feature.sudoku.model.SudokuMove
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +29,8 @@ data class SudokuUiState(
     val difficulty: Difficulty = Difficulty.MEDIUM,
     val mode: SudokuMode = SudokuMode.CLASSIC,
     val isNotesMode: Boolean = false,
-    val isGenerating: Boolean = false
+    val isGenerating: Boolean = false,
+    val canUndo: Boolean = false
 )
 
 @HiltViewModel
@@ -48,8 +51,12 @@ class SudokuViewModel @Inject constructor(
         maxHints = assists.maxHints,
         timeSource = timeSource
     )
+    private val undoStack: UndoStack<SudokuMove> =
+        UndoStack(initial = SudokuBoardSaver.restoreUndo(savedStateHandle))
 
-    private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty, mode = mode))
+    private val _state = MutableStateFlow(
+        SudokuUiState(difficulty = difficulty, mode = mode, canUndo = undoStack.canUndo)
+    )
     val state: StateFlow<SudokuUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
 
@@ -64,12 +71,14 @@ class SudokuViewModel @Inject constructor(
 
     fun newPuzzle() {
         gameSession.reset()
+        undoStack.clear()
         SudokuBoardSaver.clear(savedStateHandle)
         _state.update {
             it.copy(
                 isGenerating = true,
                 selectedCell = -1,
-                isNotesMode = false
+                isNotesMode = false,
+                canUndo = false
             )
         }
         viewModelScope.launch {
@@ -92,40 +101,26 @@ class SudokuViewModel @Inject constructor(
         val state = _state.value
         val idx = state.selectedCell
         if (idx < 0 || state.board.given[idx]) return
+        val board = state.board
 
         if (state.isNotesMode) {
-            val currentNotes = state.board.notes[idx]
-            val newNotes = state.board.notes.copyOf()
-            newNotes[idx] = if (number in currentNotes) currentNotes - number else currentNotes + number
-            val newBoard = state.board.copy(notes = newNotes)
-            saveBoard(newBoard)
-            _state.update { it.copy(board = newBoard) }
+            val notes = board.notes[idx]
+            changeCell(idx, board.current[idx], if (number in notes) notes - number else notes + number)
             return
         }
 
-        val newCurrent = state.board.current.copyOf()
-        newCurrent[idx] = number
-        val newNotes = state.board.notes.copyOf()
-        if (assists.clearCellNotesOnEntry) newNotes[idx] = emptySet()
-        val newBoard = state.board.copy(current = newCurrent, notes = newNotes)
-        saveBoard(newBoard)
-        _state.update { it.copy(board = newBoard) }
-        completeIfSolved(newBoard)
+        val notes = if (assists.clearCellNotesOnEntry) emptySet() else board.notes[idx]
+        changeCell(idx, number, notes)?.let(::completeIfSolved)
     }
 
     fun clearCell() {
         val state = _state.value
         val idx = state.selectedCell
         if (idx < 0 || state.board.given[idx]) return
-        val newCurrent = state.board.current.copyOf()
-        val newNotes = state.board.notes.copyOf()
-        newCurrent[idx] = 0
-        newNotes[idx] = emptySet()
-        val newBoard = state.board.copy(current = newCurrent, notes = newNotes)
-        saveBoard(newBoard)
-        _state.update { it.copy(board = newBoard) }
+        changeCell(idx, value = 0, notes = emptySet())
     }
 
+    /** In Classic a hint is undoable too; the hint itself stays spent. */
     fun useHint(): Boolean {
         if (!assists.hintsAllowed || !gameSession.hasHints) return false
         val board = _state.value.board
@@ -133,15 +128,19 @@ class SudokuViewModel @Inject constructor(
             !board.given[i] && board.current[i] != board.solution[i]
         } ?: return false
         gameSession.consumeHint()
-        val newCurrent = board.current.copyOf()
-        newCurrent[idx] = board.solution[idx]
-        val newNotes = board.notes.copyOf()
-        newNotes[idx] = emptySet()
-        val newBoard = board.copy(current = newCurrent, notes = newNotes)
-        saveBoard(newBoard)
-        _state.update { it.copy(board = newBoard, selectedCell = idx) }
+        val newBoard = changeCell(idx, board.solution[idx], emptySet()) ?: return true
+        _state.update { it.copy(selectedCell = idx) }
         completeIfSolved(newBoard)
         return true
+    }
+
+    /** Puts back the cell changed last and selects it. */
+    fun undo() {
+        val move = undoStack.pop() ?: return
+        val newBoard = _state.value.board.withCell(move.index, move.value, move.notes)
+        commit(newBoard)
+        _state.update { it.copy(selectedCell = move.index) }
+        completeIfSolved(newBoard)
     }
 
     fun dismissWin() = gameSession.dismissWin()
@@ -152,10 +151,29 @@ class SudokuViewModel @Inject constructor(
     fun onScreenVisible() = gameSession.onForeground()
     fun onScreenHidden() = gameSession.onBackground()
 
+    /**
+     * The only way a player move changes the board: records the cell's previous state for
+     * undo, then saves. Returns the new board, or null when nothing actually changed.
+     */
+    private fun changeCell(index: Int, value: Int, notes: Set<Int>): SudokuBoard? {
+        val board = _state.value.board
+        if (board.current[index] == value && board.notes[index] == notes) return null
+        undoStack.push(board.moveAt(index))
+        return board.withCell(index, value, notes).also(::commit)
+    }
+
+    private fun commit(board: SudokuBoard) {
+        SudokuBoardSaver.save(savedStateHandle, board)
+        saveUndo()
+        _state.update { it.copy(board = board, canUndo = undoStack.canUndo) }
+    }
+
     /** Classic declares the win as soon as the grid is right; Hardcore waits for Check. */
     private fun completeIfSolved(board: SudokuBoard) {
         if (assists.autoDetectWin && board.isComplete()) gameSession.complete()
     }
 
     private fun saveBoard(board: SudokuBoard) = SudokuBoardSaver.save(savedStateHandle, board)
+
+    private fun saveUndo() = SudokuBoardSaver.saveUndo(savedStateHandle, undoStack.toList())
 }

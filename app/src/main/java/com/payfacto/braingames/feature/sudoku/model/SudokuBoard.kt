@@ -10,6 +10,16 @@ data class SudokuBoard(
         current[i] == solution[i]
     }
 
+    /** A copy with one cell's value and notes replaced. */
+    fun withCell(index: Int, value: Int, notes: Set<Int>): SudokuBoard {
+        val newCurrent = current.copyOf().also { it[index] = value }
+        val newNotes = this.notes.copyOf().also { it[index] = notes }
+        return copy(current = newCurrent, notes = newNotes)
+    }
+
+    /** Snapshot of one cell, for undo. */
+    fun moveAt(index: Int): SudokuMove = SudokuMove(index, current[index], notes[index])
+
     fun conflictsAt(index: Int): Boolean {
         val value = current[index]
         if (value == 0) return false

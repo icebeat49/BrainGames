@@ -26,6 +26,7 @@
     <string name="action_mute">Mute</string>
     <string name="action_unmute">Unmute</string>
     <string name="hints_remaining">%1$d hints left</string>
+    <string name="action_undo">Undo</string>
 
     <!-- Win -->
     <string name="win_title">Puzzle Solved!</string>

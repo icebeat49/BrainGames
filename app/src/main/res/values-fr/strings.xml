@@ -26,6 +26,7 @@
     <string name="action_mute">Muet</string>
     <string name="action_unmute">Son activé</string>
     <string name="hints_remaining">%1$d indices restants</string>
+    <string name="action_undo">Annuler</string>
 
     <!-- Win -->
     <string name="win_title">Grille résolue !</string>

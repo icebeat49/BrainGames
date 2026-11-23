@@ -109,7 +109,12 @@ fun SudokuScreen(
                     soundManager.play(SoundEvent.TAP)
                 },
                 isNotesMode = state.isNotesMode,
-                onToggleNotesMode = { viewModel.toggleNotesMode() }
+                onToggleNotesMode = { viewModel.toggleNotesMode() },
+                onUndo = {
+                    viewModel.undo()
+                    soundManager.play(SoundEvent.TAP)
+                },
+                canUndo = state.canUndo
             )
         }
 
