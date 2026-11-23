@@ -11,6 +11,7 @@ import com.payfacto.braingames.feature.crowns.CrownsTestGrids.uniqueFiveByFive
 import com.payfacto.braingames.feature.crowns.data.CrownsPuzzleSource
 import com.payfacto.braingames.feature.crowns.engine.CrownsHint
 import com.payfacto.braingames.feature.crowns.engine.Technique
+import com.payfacto.braingames.feature.crowns.input.TapEvent
 import com.payfacto.braingames.feature.crowns.model.CrownsBoard
 import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
 import com.payfacto.braingames.feature.crowns.model.CellMark
@@ -54,7 +55,8 @@ class CrownsViewModelTest {
     private fun CrownsViewModel.tap(cell: Int, gapMillis: Long = 1_000) {
         val down = clock + gapMillis
         clock = down + 40
-        onTap(cell, down, clock, DOUBLE_TAP_TIMEOUT)
+        val point = GridPoint(cell / puzzle.size + 0.5f, cell % puzzle.size + 0.5f)
+        onTap(TapEvent(point, down, clock, DOUBLE_TAP_TIMEOUT, snapRadiusCells = 0.2f))
     }
 
     private fun CrownsViewModel.placeCrown(cell: Int) {

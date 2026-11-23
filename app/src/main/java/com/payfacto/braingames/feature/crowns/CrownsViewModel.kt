@@ -20,6 +20,7 @@ import com.payfacto.braingames.feature.crowns.engine.CrownsHintEngine
 import com.payfacto.braingames.feature.crowns.engine.CrownsValidator
 import com.payfacto.braingames.feature.crowns.engine.cellsOf
 import com.payfacto.braingames.feature.crowns.input.CrownsGestures
+import com.payfacto.braingames.feature.crowns.input.TapEvent
 import com.payfacto.braingames.feature.crowns.input.BoardEdit
 import com.payfacto.braingames.feature.crowns.model.CrownsBoard
 import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
@@ -144,12 +145,10 @@ class CrownsViewModel @Inject constructor(
 
     // ── Gestures (see CrownsGestures for the rules) ────────────────────────
 
-    fun onTap(cell: Int, downTimeMillis: Long, upTimeMillis: Long, doubleTapTimeoutMillis: Long) {
+    fun onTap(event: TapEvent) {
         val state = _state.value
         if (!state.isPlayable) return
-        applyEdit(
-            gestures.tap(cell, downTimeMillis, upTimeMillis, doubleTapTimeoutMillis, state.board, state.isQuestionMode)
-        )
+        applyEdit(gestures.tap(event, state.board, state.isQuestionMode))
     }
 
     fun onDragStart(start: GridPoint) {

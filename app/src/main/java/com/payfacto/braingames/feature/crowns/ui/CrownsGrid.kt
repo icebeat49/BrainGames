@@ -41,6 +41,7 @@ import com.payfacto.braingames.core.theme.LocalRegionPalette
 import com.payfacto.braingames.core.theme.RegionPalette
 import com.payfacto.braingames.core.ui.grid.GridGeometry
 import com.payfacto.braingames.core.ui.grid.GridPoint
+import com.payfacto.braingames.feature.crowns.input.TapEvent
 import com.payfacto.braingames.feature.crowns.model.CrownsBoard
 import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
 import com.payfacto.braingames.feature.crowns.model.CellMark
@@ -55,7 +56,7 @@ data class CrownsGridHighlights(
 
 /** Input callbacks; the rules live in CrownsGestures behind the ViewModel. */
 class CrownsGridInput(
-    val onTap: (cell: Int, downMillis: Long, upMillis: Long, doubleTapTimeoutMillis: Long) -> Unit,
+    val onTap: (TapEvent) -> Unit,
     val onDragStart: (GridPoint) -> Unit,
     val onDragMove: (GridPoint) -> Unit,
     val onDragEnd: () -> Unit,
@@ -91,12 +92,15 @@ fun CrownsGrid(
                             if (dragging) {
                                 currentInput.onDragEnd()
                             } else if (change != null) {
-                                geometry.cellAt(down.position.x, down.position.y)?.let { cell ->
-                                    currentInput.onTap(
-                                        cell, down.uptimeMillis, change.uptimeMillis,
-                                        viewConfiguration.doubleTapTimeoutMillis
+                                currentInput.onTap(
+                                    TapEvent(
+                                        point = geometry.toGridPoint(down.position.x, down.position.y),
+                                        downTimeMillis = down.uptimeMillis,
+                                        upTimeMillis = change.uptimeMillis,
+                                        doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
+                                        snapRadiusCells = viewConfiguration.touchSlop / geometry.cellWidth
                                     )
-                                }
+                                )
                             }
                             change?.consume()
                             break

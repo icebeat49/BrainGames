@@ -4,6 +4,7 @@ import com.payfacto.braingames.core.ui.grid.GridPoint
 import com.payfacto.braingames.core.undo.UndoStack
 import com.payfacto.braingames.feature.crowns.input.CrownsGestures
 import com.payfacto.braingames.feature.crowns.input.BoardEdit
+import com.payfacto.braingames.feature.crowns.input.TapEvent
 import com.payfacto.braingames.feature.crowns.model.CrownsBoard
 import com.payfacto.braingames.feature.crowns.model.CellMark
 import com.payfacto.braingames.feature.crowns.model.CellMark.CROWN
@@ -33,12 +34,16 @@ class CrownsGesturesTest {
             edit.changes.forEach { (cell, mark) -> board = board.withMark(cell, mark) }
         }
 
-        /** A tap [gapMillis] after the previous one, lasting 50 ms. */
-        fun tap(cell: Int, gapMillis: Long = 1_000) {
+        /** A tap in the middle of [cell], [gapMillis] after the previous one, lasting 50 ms. */
+        fun tap(cell: Int, gapMillis: Long = 1_000) =
+            tapAt(GridPoint(cell / board.size + 0.5f, cell % board.size + 0.5f), gapMillis)
+
+        /** A tap at an exact position, in grid units. */
+        fun tapAt(point: GridPoint, gapMillis: Long = 1_000) {
             val down = clock + gapMillis
             val up = down + 50
             clock = up
-            apply(gestures.tap(cell, down, up, DOUBLE_TAP_TIMEOUT, board, questionMode))
+            apply(gestures.tap(TapEvent(point, down, up, DOUBLE_TAP_TIMEOUT, SNAP_RADIUS_CELLS), board, questionMode))
         }
 
         fun doubleTap(cell: Int) {
@@ -190,6 +195,39 @@ class CrownsGesturesTest {
         h.doubleTap(7)
 
         assertEquals(CROWN, h.board[7])
+    }
+
+    // ── Double tap on small cells ───────────────────────────────────────────
+
+    @Test
+    fun `a second tap just across the border still makes a crown on the first cell`() {
+        val h = Harness()
+
+        h.tapAt(GridPoint(1.5f, 1.95f))                 // cell (1,1), near its right edge
+        h.tapAt(GridPoint(1.5f, 2.05f), gapMillis = 100) // cell (1,2), 0.1 cell away
+
+        assertEquals(CROWN, h.board[7])
+        assertEquals(EMPTY, h.board[8])
+        assertEquals(1, h.undo.size)
+    }
+
+    @Test
+    fun `a quick second tap further than the slop on a neighbour is two single taps`() {
+        val h = Harness()
+
+        h.tapAt(GridPoint(1.5f, 1.5f))
+        h.tapAt(GridPoint(1.5f, 2.5f), gapMillis = 100) // one whole cell away
+
+        assertEquals(listOf(CROSS, CROSS), listOf(h.board[7], h.board[8]))
+    }
+
+    @Test
+    fun `a tap outside the grid does nothing`() {
+        val h = Harness()
+
+        h.tapAt(GridPoint(-0.5f, 2.5f))
+
+        assertEquals(CrownsBoard.empty(6), h.board)
     }
 
     // ── Drag ────────────────────────────────────────────────────────────────
@@ -351,5 +389,7 @@ class CrownsGesturesTest {
 
     private companion object {
         const val DOUBLE_TAP_TIMEOUT = 300L
+        /** About an 8dp touch slop on a 30dp cell (11×11 on a small phone). */
+        const val SNAP_RADIUS_CELLS = 0.27f
     }
 }
