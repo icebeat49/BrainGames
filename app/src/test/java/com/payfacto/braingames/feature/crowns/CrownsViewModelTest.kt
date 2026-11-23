@@ -320,6 +320,24 @@ class CrownsViewModelTest {
     }
 
     @Test
+    fun `an erase drag clears marks, keeps the crown and is one undo step`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        (20..23).forEach { viewModel.tap(it) }         // X on (4,0)..(4,3)
+        viewModel.placeCrown(cell(4, 4))
+        val beforeErase = viewModel.state.value.board
+
+        viewModel.onDragStart(GridPoint(4.5f, 0.5f))
+        viewModel.onDragMove(GridPoint(4.5f, 4.5f))
+        viewModel.onDragEnd()
+        val erased = viewModel.state.value.board
+        viewModel.undo()
+
+        assertEquals(emptySet<Int>(), erased.cellsWith(CellMark.CROSS))
+        assertEquals(CellMark.CROWN, erased[cell(4, 4)])
+        assertEquals(beforeErase, viewModel.state.value.board)
+    }
+
+    @Test
     fun `clear all empties the board and can be undone`() = runTest(mainDispatcher.dispatcher) {
         val viewModel = classic()
         viewModel.tap(cell(1, 1))

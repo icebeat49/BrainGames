@@ -244,13 +244,98 @@ class CrownsGesturesTest {
     }
 
     @Test
-    fun `a drag that starts on marked cells is still one undo step`() {
+    fun `a paint drag that starts on an empty cell next to marks is one undo step`() {
         val h = Harness()
-        h.set(0, CROWN)
+        h.set(1, CROSS)
 
         h.drag(middleOf(0, 0), middleOf(0, 1), middleOf(0, 3))
 
+        assertEquals(listOf(CROSS, CROSS, CROSS, CROSS), (0..3).map { h.board[it] })
         assertEquals(1, h.undo.size)
+    }
+
+    // ── Erase drag ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `a drag starting on a cross erases crosses and question marks in its path`() {
+        val h = Harness()
+        h.set(0, CROSS)
+        h.set(1, QUESTION)
+        h.set(3, CROSS)
+        h.set(5, QUESTION)
+
+        h.drag(middleOf(0, 0), middleOf(0, 5))
+
+        assertEquals((0..5).map { EMPTY }, (0..5).map { h.board[it] })
+    }
+
+    @Test
+    fun `an erase drag leaves crowns and empty cells untouched`() {
+        val h = Harness()
+        h.set(0, CROSS)
+        h.set(2, CROWN)
+        h.set(4, CROSS)
+
+        h.drag(middleOf(0, 0), middleOf(0, 5))
+
+        assertEquals(listOf(EMPTY, EMPTY, CROWN, EMPTY, EMPTY, EMPTY), (0..5).map { h.board[it] })
+    }
+
+    @Test
+    fun `a drag starting on a question mark erases too`() {
+        val h = Harness()
+        h.set(6, QUESTION)
+        h.set(7, CROSS)
+
+        h.drag(middleOf(1, 0), middleOf(1, 1))
+
+        assertEquals(listOf(EMPTY, EMPTY), listOf(h.board[6], h.board[7]))
+    }
+
+    @Test
+    fun `an erase drag ignores the question toggle`() {
+        val h = Harness().apply { questionMode = true }
+        h.set(0, CROSS)
+        h.set(1, CROSS)
+
+        h.drag(middleOf(0, 0), middleOf(0, 2))
+
+        assertEquals(listOf(EMPTY, EMPTY, EMPTY), (0..2).map { h.board[it] })
+    }
+
+    @Test
+    fun `a fast erase swipe with only two samples skips no cell`() {
+        val h = Harness()
+        (0..5).forEach { h.set(4 * 6 + it, CROSS) }
+
+        h.drag(GridPoint(4.5f, 0.1f), GridPoint(4.5f, 5.9f))
+
+        assertEquals((0..5).map { EMPTY }, (0..5).map { h.board[4 * 6 + it] })
+    }
+
+    @Test
+    fun `a whole erase drag is one undo step`() {
+        val h = Harness()
+        (0..5).forEach { h.set(it, CROSS) }
+        val before = h.board
+
+        h.drag(middleOf(0, 0), middleOf(0, 2), middleOf(0, 5))
+        h.undoOnce()
+
+        assertEquals(before, h.board)
+    }
+
+    @Test
+    fun `a drag starting on a crown does nothing and records no undo`() {
+        val h = Harness()
+        h.set(0, CROWN)
+        h.set(2, CROSS)
+        val before = h.board
+
+        h.drag(middleOf(0, 0), middleOf(0, 5))
+
+        assertEquals(before, h.board)
+        assertFalse(h.undo.canUndo)
     }
 
     @Test

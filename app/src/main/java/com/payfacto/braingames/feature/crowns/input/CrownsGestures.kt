@@ -26,16 +26,23 @@ data class BoardEdit(
  * - Second tap on the same cell within the double-tap timeout → CROWN, replacing what
  *   the first tap did, as the same undo step. If the cell held a crown before the
  *   first tap, the double tap clears it instead.
- * - Drag → paints X (or ?) on every EMPTY cell the finger crosses, interpolated between
- *   samples. Never overwrites a crown or another mark. One undo step per drag.
+ * - Drag: the start cell decides the mode for the whole gesture, applied to every cell the
+ *   finger crosses (interpolated between samples), as one undo step:
+ *   - starts on EMPTY → paint: EMPTY cells get X (or ?), other cells are left alone;
+ *   - starts on X or ? → erase: X and ? cells are cleared, whatever the toggle says;
+ *   - starts on a crown → nothing at all.
+ *   A drag never places, removes or changes a crown.
  */
 class CrownsGestures {
+
+    private enum class DragMode { PAINT, ERASE, NONE }
 
     private data class LastTap(val cell: Int, val upTimeMillis: Long, val markBefore: CellMark)
 
     private var lastTap: LastTap? = null
     private var dragPoint: GridPoint? = null
-    private var dragMark = CellMark.CROSS
+    private var dragMode = DragMode.NONE
+    private var paintMark = CellMark.CROSS
     private var dragHasEdited = false
 
     /** A completed tap. Times are the pointer's down and up uptimes in milliseconds. */
@@ -57,37 +64,50 @@ class CrownsGestures {
         }
 
         val before = board[cell]
-        val after = if (before == CellMark.EMPTY) paintMark(questionMode) else CellMark.EMPTY
+        val after = if (before == CellMark.EMPTY) markFor(questionMode) else CellMark.EMPTY
         lastTap = LastTap(cell, upTimeMillis, before)
         return BoardEdit(mapOf(cell to after), continuesPrevious = false)
     }
 
-    /** The finger moved past touch slop from [start]: paint the cell it started on. */
+    /** The finger moved past touch slop from [start]: the start cell sets the drag mode, then is edited. */
     fun dragStart(start: GridPoint, board: CrownsBoard, questionMode: Boolean): BoardEdit? {
         lastTap = null
         dragPoint = start
-        dragMark = paintMark(questionMode)
         dragHasEdited = false
-        return paint(GridGeometry.cellsAlong(start, start, board.size, board.size), board)
+        paintMark = markFor(questionMode)
+        val startCell = GridGeometry.cellAt(start, board.size, board.size)
+        dragMode = when (startCell?.let { board[it] }) {
+            CellMark.EMPTY -> DragMode.PAINT
+            CellMark.CROSS, CellMark.QUESTION -> DragMode.ERASE
+            CellMark.CROWN, null -> DragMode.NONE
+        }
+        return edit(GridGeometry.cellsAlong(start, start, board.size, board.size), board)
     }
 
-    /** Paints every cell between the previous sample and [to]. */
+    /** Edits every cell between the previous sample and [to]. */
     fun dragMove(to: GridPoint, board: CrownsBoard): BoardEdit? {
         val from = dragPoint ?: return null
         dragPoint = to
-        return paint(GridGeometry.cellsAlong(from, to, board.size, board.size), board)
+        return edit(GridGeometry.cellsAlong(from, to, board.size, board.size), board)
     }
 
     fun dragEnd() {
         dragPoint = null
+        dragMode = DragMode.NONE
         dragHasEdited = false
     }
 
-    private fun paint(cells: List<Int>, board: CrownsBoard): BoardEdit? {
-        val changes = cells.filter { board[it] == CellMark.EMPTY }.associateWith { dragMark }
+    /** Applies the drag mode to [cells]; crowns are never touched. */
+    private fun edit(cells: List<Int>, board: CrownsBoard): BoardEdit? {
+        val changes: Map<Int, CellMark> = when (dragMode) {
+            DragMode.PAINT -> cells.filter { board[it] == CellMark.EMPTY }.associateWith { paintMark }
+            DragMode.ERASE -> cells.filter { board[it] == CellMark.CROSS || board[it] == CellMark.QUESTION }
+                .associateWith { CellMark.EMPTY }
+            DragMode.NONE -> emptyMap()
+        }
         if (changes.isEmpty()) return null
         return BoardEdit(changes, continuesPrevious = dragHasEdited).also { dragHasEdited = true }
     }
 
-    private fun paintMark(questionMode: Boolean) = if (questionMode) CellMark.QUESTION else CellMark.CROSS
+    private fun markFor(questionMode: Boolean) = if (questionMode) CellMark.QUESTION else CellMark.CROSS
 }

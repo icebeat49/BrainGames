@@ -91,7 +91,7 @@
     <string name="crowns_mode_classic_description">Règles enfreintes signalées, indices disponibles et victoire automatique.</string>
     <string name="crowns_mode_hardcore_description">Aucune aide. Vérifiez votre grille une fois toutes les couronnes placées.</string>
     <string name="crowns_mark_with">Marque : %1$s</string>
-    <string name="crowns_gesture_help">Toucher : marquer · Double toucher : couronne · Glisser : marquer plusieurs cases</string>
+    <string name="crowns_gesture_help">Toucher : marquer · Double toucher : couronne · Glisser depuis une case vide : marquer · Glisser depuis une marque : effacer</string>
     <string name="crowns_clear_title">Effacer la grille ?</string>
     <string name="crowns_clear_message">Toutes les couronnes et toutes les marques seront retirées. Vous pourrez annuler.</string>
 

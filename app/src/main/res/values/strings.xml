@@ -90,7 +90,7 @@
     <string name="crowns_mode_classic_description">Broken rules are shown, hints are available and the win is automatic.</string>
     <string name="crowns_mode_hardcore_description">No help at all. Check your grid once every crown is placed.</string>
     <string name="crowns_mark_with">Mark: %1$s</string>
-    <string name="crowns_gesture_help">Tap: mark · Double tap: crown · Drag: mark several cells</string>
+    <string name="crowns_gesture_help">Tap: mark · Double tap: crown · Drag from an empty cell: mark · Drag from a mark: erase</string>
     <string name="crowns_clear_title">Clear the grid?</string>
     <string name="crowns_clear_message">Every crown and mark will be removed. You can undo this.</string>
 
