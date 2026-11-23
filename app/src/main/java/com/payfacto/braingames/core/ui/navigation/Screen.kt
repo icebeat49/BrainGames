@@ -16,6 +16,10 @@ sealed class Screen(val route: String) {
     object WordSearch : Screen("wordsearch/{$ARG_DIFFICULTY}") {
         fun createRoute(difficulty: String) = "wordsearch/$difficulty"
     }
+    /** Same pattern as Sudoku: `mode` is optional. */
+    object Animals : Screen("animals/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}") {
+        fun createRoute(difficulty: String, mode: String) = "animals/$difficulty?$ARG_MODE=$mode"
+    }
 
     companion object {
         /** Route argument names. Navigation also copies them into each ViewModel's SavedStateHandle. */

@@ -162,6 +162,13 @@ class AnimalsViewModel @Inject constructor(
 
     fun onDragEnd() = gestures.dragEnd()
 
+    /** Direct edit for accessibility actions (TalkBack), as one undo step. */
+    fun setMark(cell: Int, mark: CellMark) {
+        val state = _state.value
+        if (!state.isPlayable) return
+        applyChange(state.board.withMark(cell, mark), recordUndo = true)
+    }
+
     fun toggleQuestionMode() {
         val enabled = !_state.value.isQuestionMode
         AnimalsGameSaver.saveQuestionMode(savedStateHandle, enabled)

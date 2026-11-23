@@ -23,11 +23,14 @@ android {
         debug {
             // Hidden games stay reachable during development.
             buildConfigField("boolean", "FEATURE_WORD_SEARCH", "true")
+            buildConfigField("boolean", "FEATURE_ANIMALS", "true")
         }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             buildConfigField("boolean", "FEATURE_WORD_SEARCH", "false")
+            // Off until the game is finished (real art, final difficulty tuning).
+            buildConfigField("boolean", "FEATURE_ANIMALS", "false")
         }
     }
     compileOptions {

@@ -3,6 +3,7 @@ package com.payfacto.braingames.core.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 @Composable
 fun BrainGamesTheme(
@@ -11,9 +12,13 @@ fun BrainGamesTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = appColorScheme(appColorTheme, darkTheme)
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = BrainGamesTypography,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalRegionPalette provides if (darkTheme) DarkRegionPalette else LightRegionPalette
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = BrainGamesTypography,
+            content = content
+        )
+    }
 }

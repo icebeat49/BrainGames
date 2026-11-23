@@ -9,18 +9,21 @@ import com.payfacto.braingames.core.model.GameType
  */
 object FeatureFlags {
 
-    val enabledGames: Set<GameType> =
-        enabledGamesFor(wordSearchEnabled = BuildConfig.FEATURE_WORD_SEARCH)
+    val enabledGames: Set<GameType> = enabledGamesFor(
+        wordSearchEnabled = BuildConfig.FEATURE_WORD_SEARCH,
+        animalsEnabled = BuildConfig.FEATURE_ANIMALS
+    )
 
     fun isEnabled(game: GameType): Boolean = game in enabledGames
 
     /** Exhaustive on purpose: a new [GameType] must decide here whether it is shown. */
-    internal fun enabledGamesFor(wordSearchEnabled: Boolean): Set<GameType> =
+    internal fun enabledGamesFor(wordSearchEnabled: Boolean, animalsEnabled: Boolean): Set<GameType> =
         GameType.entries.filterTo(LinkedHashSet()) { game ->
             when (game) {
                 GameType.SUDOKU      -> true
                 GameType.KAKURO      -> true
                 GameType.WORD_SEARCH -> wordSearchEnabled
+                GameType.ANIMALS     -> animalsEnabled
             }
         }
 }

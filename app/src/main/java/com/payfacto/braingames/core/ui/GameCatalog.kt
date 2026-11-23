@@ -4,12 +4,14 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.payfacto.braingames.R
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
+import com.payfacto.braingames.feature.animals.engine.AnimalsDifficulty
 import com.payfacto.braingames.feature.wordsearch.data.WordSearchGenerator
 
 /** How a game is presented in menus. */
@@ -50,6 +52,16 @@ object GameCatalog {
             descriptionRes = R.string.home_desc_wordsearch,
             icon = Icons.Default.Search,
             gridSize = WordSearchGenerator::gridSizeFor
+        )
+        GameType.ANIMALS -> GameInfo(
+            titleRes = R.string.home_play_animals,
+            descriptionRes = R.string.home_desc_animals,
+            icon = Icons.Default.Pets,
+            modeDescriptions = mapOf(
+                GameMode.CLASSIC to R.string.animals_mode_classic_description,
+                GameMode.HARDCORE to R.string.animals_mode_hardcore_description
+            ),
+            gridSize = AnimalsDifficulty::sizeFor
         )
     }
 }
