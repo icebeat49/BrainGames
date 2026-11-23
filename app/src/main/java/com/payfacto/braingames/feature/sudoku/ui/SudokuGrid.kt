@@ -23,7 +23,10 @@ fun SudokuGrid(
     assists: SudokuAssists,
     primaryColor: Color,
     onSurface: Color,
-    onCellTap: (Int) -> Unit
+    onCellTap: (Int) -> Unit,
+    /** Cells revealed as wrong after a failed Hardcore check. */
+    errorCells: Set<Int> = emptySet(),
+    errorColor: Color = Color.Red
 ) {
     Canvas(
         modifier = Modifier
@@ -39,18 +42,22 @@ fun SudokuGrid(
             }
     ) {
         val cellSize = size.width / 9f
-        drawGrid(board, selectedCell, assists, primaryColor, onSurface, cellSize)
+        drawGrid(board, selectedCell, assists, GridColors(primaryColor, onSurface, errorColor), errorCells, cellSize)
     }
 }
+
+private class GridColors(val primary: Color, val onSurface: Color, val error: Color)
 
 private fun DrawScope.drawGrid(
     board: SudokuBoard,
     selectedCell: Int,
     assists: SudokuAssists,
-    primaryColor: Color,
-    onSurface: Color,
+    colors: GridColors,
+    errorCells: Set<Int>,
     cellSize: Float
 ) {
+    val primaryColor = colors.primary
+    val onSurface = colors.onSurface
     val selectedRow = if (selectedCell >= 0) selectedCell / 9 else -1
     val selectedCol = if (selectedCell >= 0) selectedCell % 9 else -1
     val selectedBox = if (selectedCell >= 0) (selectedRow / 3) * 3 + selectedCol / 3 else -1
@@ -72,6 +79,15 @@ private fun DrawScope.drawGrid(
             if (bgColor != Color.Transparent) {
                 drawRect(
                     color = bgColor,
+                    topLeft = Offset(col * cellSize, row * cellSize),
+                    size = Size(cellSize, cellSize)
+                )
+            }
+
+            // Wrong cells revealed by a failed check
+            if (idx in errorCells) {
+                drawRect(
+                    color = colors.error.copy(alpha = 0.3f),
                     topLeft = Offset(col * cellSize, row * cellSize),
                     size = Size(cellSize, cellSize)
                 )
@@ -102,6 +118,7 @@ private fun DrawScope.drawGrid(
                 val isGiven = board.given[idx]
                 val isConflict = assists.showConflicts && board.conflictsAt(idx)
                 textPaint.color = when {
+                    idx in errorCells -> colors.error.toArgb()
                     isConflict -> android.graphics.Color.RED
                     isGiven    -> onSurface.toArgb()
                     else       -> primaryColor.toArgb()

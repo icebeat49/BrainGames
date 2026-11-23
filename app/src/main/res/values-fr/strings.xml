@@ -61,6 +61,19 @@
     <string name="sudoku_mode_hardcore_description">Papier-crayon : aucune aide. Vérifiez votre grille une fois remplie.</string>
     <string name="sudoku_hardcore_label">Mode Hardcore</string>
 
+    <!-- Sudoku check (Hardcore) -->
+    <string name="sudoku_check">Vérifier</string>
+    <string name="sudoku_check_failed_title">Pas tout à fait</string>
+    <string name="sudoku_check_failed_message">Certaines cases sont fausses. Une vérification ratée ne coûte rien.</string>
+    <plurals name="sudoku_check_wrong_count">
+        <item quantity="one">%1$d case est fausse.</item>
+        <item quantity="many">%1$d cases sont fausses.</item>
+        <item quantity="other">%1$d cases sont fausses.</item>
+    </plurals>
+    <string name="sudoku_check_keep_going">Continuer</string>
+    <string name="sudoku_check_show_count">Combien ?</string>
+    <string name="sudoku_check_show_where">Montrer où</string>
+
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d mots trouvés</string>
 </resources>

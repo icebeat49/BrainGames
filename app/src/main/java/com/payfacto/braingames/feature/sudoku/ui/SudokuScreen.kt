@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -27,6 +29,7 @@ import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.GameTopBar
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
 import com.payfacto.braingames.feature.sudoku.SudokuViewModel
+import com.payfacto.braingames.feature.sudoku.model.CheckResult
 
 @Composable
 fun SudokuScreen(
@@ -96,7 +99,9 @@ fun SudokuScreen(
                         soundManager.play(SoundEvent.TAP)
                         viewModel.selectCell(idx)
                     }
-                }
+                },
+                errorCells = state.errorCells,
+                errorColor = MaterialTheme.colorScheme.error
             )
             Spacer(Modifier.height(16.dp))
             NumberPad(
@@ -115,6 +120,28 @@ fun SudokuScreen(
                     soundManager.play(SoundEvent.TAP)
                 },
                 canUndo = state.canUndo
+            )
+            if (!assists.autoDetectWin) {
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        val result = viewModel.checkSolution()
+                        if (result is CheckResult.Incorrect) soundManager.play(SoundEvent.ERROR)
+                    },
+                    enabled = state.canCheck,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.sudoku_check))
+                }
+            }
+        }
+
+        state.failedCheck?.let { failedCheck ->
+            CheckFailedDialog(
+                failedCheck = failedCheck,
+                onKeepGoing = viewModel::dismissFailedCheck,
+                onShowCount = viewModel::showWrongCount,
+                onShowWhere = viewModel::showWrongCells
             )
         }
 

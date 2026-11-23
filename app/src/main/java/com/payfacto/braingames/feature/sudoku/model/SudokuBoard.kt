@@ -10,6 +10,12 @@ data class SudokuBoard(
         current[i] == solution[i]
     }
 
+    /** True when no cell is empty (right or wrong). */
+    fun isFilled(): Boolean = current.none { it == 0 }
+
+    /** Indices whose value differs from the solution; empty cells count as wrong. */
+    fun wrongCells(): Set<Int> = current.indices.filterTo(LinkedHashSet()) { current[it] != solution[it] }
+
     /** A copy with one cell's value and notes replaced. */
     fun withCell(index: Int, value: Int, notes: Set<Int>): SudokuBoard {
         val newCurrent = current.copyOf().also { it[index] = value }

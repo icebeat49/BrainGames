@@ -61,6 +61,18 @@
     <string name="sudoku_mode_hardcore_description">Pen and paper: no help at all. Check your grid when it is full.</string>
     <string name="sudoku_hardcore_label">Hardcore mode</string>
 
+    <!-- Sudoku check (Hardcore) -->
+    <string name="sudoku_check">Check</string>
+    <string name="sudoku_check_failed_title">Not quite right</string>
+    <string name="sudoku_check_failed_message">Some cells are wrong. A failed check costs nothing.</string>
+    <plurals name="sudoku_check_wrong_count">
+        <item quantity="one">%1$d cell is wrong.</item>
+        <item quantity="other">%1$d cells are wrong.</item>
+    </plurals>
+    <string name="sudoku_check_keep_going">Keep going</string>
+    <string name="sudoku_check_show_count">Show how many</string>
+    <string name="sudoku_check_show_where">Show where</string>
+
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d words found</string>
 </resources>

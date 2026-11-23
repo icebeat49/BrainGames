@@ -11,6 +11,8 @@ import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.core.undo.UndoStack
 import com.payfacto.braingames.feature.sudoku.data.SudokuBoardSaver
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
+import com.payfacto.braingames.feature.sudoku.model.CheckResult
+import com.payfacto.braingames.feature.sudoku.model.FailedCheck
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
 import com.payfacto.braingames.feature.sudoku.model.SudokuMode
 import com.payfacto.braingames.feature.sudoku.model.SudokuMove
@@ -30,8 +32,15 @@ data class SudokuUiState(
     val mode: SudokuMode = SudokuMode.CLASSIC,
     val isNotesMode: Boolean = false,
     val isGenerating: Boolean = false,
-    val canUndo: Boolean = false
-)
+    val canUndo: Boolean = false,
+    /** Set while the "Not quite right" dialog is open. */
+    val failedCheck: FailedCheck? = null,
+    /** Cells revealed as wrong by "Show where"; cleared by the next change. */
+    val errorCells: Set<Int> = emptySet()
+) {
+    /** Hardcore's Check button is enabled only once every cell has a value. */
+    val canCheck: Boolean get() = !isGenerating && board.isFilled()
+}
 
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
@@ -78,7 +87,9 @@ class SudokuViewModel @Inject constructor(
                 isGenerating = true,
                 selectedCell = -1,
                 isNotesMode = false,
-                canUndo = false
+                canUndo = false,
+                failedCheck = null,
+                errorCells = emptySet()
             )
         }
         viewModelScope.launch {
@@ -143,6 +154,38 @@ class SudokuViewModel @Inject constructor(
         completeIfSolved(newBoard)
     }
 
+    /**
+     * Compares the grid with the solution. Solved stops the clock and shows the win screen;
+     * Incorrect opens the "Not quite right" dialog. A failed check costs nothing.
+     */
+    fun checkSolution(): CheckResult {
+        val wrongCells = _state.value.board.wrongCells()
+        if (wrongCells.isEmpty()) {
+            _state.update { it.copy(failedCheck = null, errorCells = emptySet()) }
+            gameSession.complete()
+            return CheckResult.Solved
+        }
+        _state.update { it.copy(failedCheck = FailedCheck(wrongCells)) }
+        return CheckResult.Incorrect(wrongCells)
+    }
+
+    /** "Keep going": closes the dialog without revealing anything. */
+    fun dismissFailedCheck() {
+        _state.update { it.copy(failedCheck = null) }
+    }
+
+    /** "Show how many": the dialog stays open and now shows the count. */
+    fun showWrongCount() {
+        _state.update { state -> state.copy(failedCheck = state.failedCheck?.copy(isCountShown = true)) }
+    }
+
+    /** "Show where": closes the dialog and marks the wrong cells until the next change. */
+    fun showWrongCells() {
+        _state.update { state ->
+            state.copy(failedCheck = null, errorCells = state.failedCheck?.wrongCells.orEmpty())
+        }
+    }
+
     fun dismissWin() = gameSession.dismissWin()
 
     fun toggleMute() = gameSession.toggleMute()
@@ -162,10 +205,11 @@ class SudokuViewModel @Inject constructor(
         return board.withCell(index, value, notes).also(::commit)
     }
 
+    /** Saves a changed board. Any change also clears error marks revealed by a check. */
     private fun commit(board: SudokuBoard) {
         SudokuBoardSaver.save(savedStateHandle, board)
         saveUndo()
-        _state.update { it.copy(board = board, canUndo = undoStack.canUndo) }
+        _state.update { it.copy(board = board, canUndo = undoStack.canUndo, errorCells = emptySet()) }
     }
 
     /** Classic declares the win as soon as the grid is right; Hardcore waits for Check. */
