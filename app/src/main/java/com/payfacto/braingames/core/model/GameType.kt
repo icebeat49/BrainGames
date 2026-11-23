@@ -4,5 +4,5 @@ enum class GameType {
     SUDOKU,
     KAKURO,
     WORD_SEARCH,
-    ANIMALS
+    CROWNS
 }

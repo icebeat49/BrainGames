@@ -12,7 +12,7 @@ import com.payfacto.braingames.core.config.FeatureFlags
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.sound.SoundManager
-import com.payfacto.braingames.feature.animals.ui.AnimalsScreen
+import com.payfacto.braingames.feature.crowns.ui.CrownsScreen
 import com.payfacto.braingames.feature.home.HomeScreen
 import com.payfacto.braingames.feature.kakuro.ui.KakuroScreen
 import com.payfacto.braingames.feature.settings.SettingsScreen
@@ -59,7 +59,7 @@ fun AppNavGraph(
                             GameType.SUDOKU      -> Screen.Sudoku.createRoute(difficulty.name, mode.name)
                             GameType.KAKURO      -> Screen.Kakuro.createRoute(difficulty.name)
                             GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name)
-                            GameType.ANIMALS     -> Screen.Animals.createRoute(difficulty.name, mode.name)
+                            GameType.CROWNS      -> Screen.Crowns.createRoute(difficulty.name, mode.name)
                         }
                         navController.navigate(route)
                     },
@@ -104,11 +104,11 @@ fun AppNavGraph(
         }
 
         composable(
-            route = Screen.Animals.route,
+            route = Screen.Crowns.route,
             arguments = listOf(difficultyArgument(), modeArgument())
         ) { backStack ->
-            IfGameEnabled(GameType.ANIMALS, backStack, navController) {
-                AnimalsScreen(
+            IfGameEnabled(GameType.CROWNS, backStack, navController) {
+                CrownsScreen(
                     soundManager = soundManager,
                     onBack = { navController.popBackStack() }
                 )

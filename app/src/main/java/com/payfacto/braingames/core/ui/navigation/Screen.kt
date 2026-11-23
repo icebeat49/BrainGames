@@ -17,8 +17,8 @@ sealed class Screen(val route: String) {
         fun createRoute(difficulty: String) = "wordsearch/$difficulty"
     }
     /** Same pattern as Sudoku: `mode` is optional. */
-    object Animals : Screen("animals/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}") {
-        fun createRoute(difficulty: String, mode: String) = "animals/$difficulty?$ARG_MODE=$mode"
+    object Crowns : Screen("crowns/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}") {
+        fun createRoute(difficulty: String, mode: String) = "crowns/$difficulty?$ARG_MODE=$mode"
     }
 
     companion object {

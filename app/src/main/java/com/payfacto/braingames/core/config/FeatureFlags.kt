@@ -11,19 +11,19 @@ object FeatureFlags {
 
     val enabledGames: Set<GameType> = enabledGamesFor(
         wordSearchEnabled = BuildConfig.FEATURE_WORD_SEARCH,
-        animalsEnabled = BuildConfig.FEATURE_ANIMALS
+        crownsEnabled = BuildConfig.FEATURE_CROWNS
     )
 
     fun isEnabled(game: GameType): Boolean = game in enabledGames
 
     /** Exhaustive on purpose: a new [GameType] must decide here whether it is shown. */
-    internal fun enabledGamesFor(wordSearchEnabled: Boolean, animalsEnabled: Boolean): Set<GameType> =
+    internal fun enabledGamesFor(wordSearchEnabled: Boolean, crownsEnabled: Boolean): Set<GameType> =
         GameType.entries.filterTo(LinkedHashSet()) { game ->
             when (game) {
                 GameType.SUDOKU      -> true
                 GameType.KAKURO      -> true
                 GameType.WORD_SEARCH -> wordSearchEnabled
-                GameType.ANIMALS     -> animalsEnabled
+                GameType.CROWNS      -> crownsEnabled
             }
         }
 }

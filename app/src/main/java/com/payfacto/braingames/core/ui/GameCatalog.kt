@@ -11,7 +11,7 @@ import com.payfacto.braingames.R
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
-import com.payfacto.braingames.feature.animals.engine.AnimalsDifficulty
+import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.wordsearch.data.WordSearchGenerator
 
 /** How a game is presented in menus. */
@@ -53,15 +53,15 @@ object GameCatalog {
             icon = Icons.Default.Search,
             gridSize = WordSearchGenerator::gridSizeFor
         )
-        GameType.ANIMALS -> GameInfo(
-            titleRes = R.string.home_play_animals,
-            descriptionRes = R.string.home_desc_animals,
+        GameType.CROWNS -> GameInfo(
+            titleRes = R.string.home_play_crowns,
+            descriptionRes = R.string.home_desc_crowns,
             icon = Icons.Default.Pets,
             modeDescriptions = mapOf(
-                GameMode.CLASSIC to R.string.animals_mode_classic_description,
-                GameMode.HARDCORE to R.string.animals_mode_hardcore_description
+                GameMode.CLASSIC to R.string.crowns_mode_classic_description,
+                GameMode.HARDCORE to R.string.crowns_mode_hardcore_description
             ),
-            gridSize = AnimalsDifficulty::sizeFor
+            gridSize = CrownsDifficulty::sizeFor
         )
     }
 }
