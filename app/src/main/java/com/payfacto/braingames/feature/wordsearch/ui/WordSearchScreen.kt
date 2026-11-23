@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
 import com.payfacto.braingames.core.sound.SoundEvent
@@ -44,9 +45,15 @@ fun WordSearchScreen(
     viewModel: WordSearchViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val session by viewModel.session.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state.showWin) {
-        if (state.showWin) soundManager.play(SoundEvent.WIN)
+    LifecycleStartEffect(viewModel) {
+        viewModel.onScreenVisible()
+        onStopOrDispose { viewModel.onScreenHidden() }
+    }
+
+    LaunchedEffect(session.showWin) {
+        if (session.showWin) soundManager.play(SoundEvent.WIN)
     }
 
     val found = state.board.words.count { it.found }
@@ -57,8 +64,8 @@ fun WordSearchScreen(
         topBar = {
             GameTopBar(
                 title = stringResource(R.string.home_play_wordsearch),
-                hintsRemaining = state.hintsRemaining,
-                isMuted = state.isMuted,
+                hintsRemaining = session.hintsRemaining,
+                isMuted = session.isMuted,
                 onBack = onBack,
                 onHint = {
                     val used = viewModel.useHint()
@@ -136,8 +143,8 @@ fun WordSearchScreen(
         }
 
         WinAnimationOverlay(
-            visible = state.showWin,
-            elapsedSeconds = state.elapsedSeconds,
+            visible = session.showWin,
+            elapsedSeconds = session.elapsedSeconds,
             onPlayAgain = {
                 viewModel.newPuzzle()
                 soundManager.play(SoundEvent.TAP)

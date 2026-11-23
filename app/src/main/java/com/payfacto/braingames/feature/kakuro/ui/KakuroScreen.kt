@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
 import com.payfacto.braingames.core.sound.SoundEvent
@@ -32,17 +33,23 @@ fun KakuroScreen(
     viewModel: KakuroViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val session by viewModel.session.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state.showWin) {
-        if (state.showWin) soundManager.play(SoundEvent.WIN)
+    LifecycleStartEffect(viewModel) {
+        viewModel.onScreenVisible()
+        onStopOrDispose { viewModel.onScreenHidden() }
+    }
+
+    LaunchedEffect(session.showWin) {
+        if (session.showWin) soundManager.play(SoundEvent.WIN)
     }
 
     Scaffold(
         topBar = {
             GameTopBar(
                 title = stringResource(R.string.home_play_kakuro),
-                hintsRemaining = state.hintsRemaining,
-                isMuted = state.isMuted,
+                hintsRemaining = session.hintsRemaining,
+                isMuted = session.isMuted,
                 onBack = onBack,
                 onHint = {
                     val used = viewModel.useHint()
@@ -64,7 +71,7 @@ fun KakuroScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(R.string.hints_remaining, state.hintsRemaining),
+                text = stringResource(R.string.hints_remaining, session.hintsRemaining),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -93,8 +100,8 @@ fun KakuroScreen(
         }
 
         WinAnimationOverlay(
-            visible = state.showWin,
-            elapsedSeconds = state.elapsedSeconds,
+            visible = session.showWin,
+            elapsedSeconds = session.elapsedSeconds,
             onPlayAgain = {
                 viewModel.newPuzzle()
                 soundManager.play(SoundEvent.TAP)

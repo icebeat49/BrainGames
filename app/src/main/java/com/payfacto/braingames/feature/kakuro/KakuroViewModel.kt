@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.session.GameSession
+import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.kakuro.data.KakuroBoardSaver
 import com.payfacto.braingames.feature.kakuro.data.KakuroPuzzleBank
@@ -13,69 +15,47 @@ import com.payfacto.braingames.feature.kakuro.model.KakuroBoard
 import com.payfacto.braingames.feature.kakuro.model.KakuroCell
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class KakuroUiState(
     val board: KakuroBoard = KakuroBoard(0, 0, emptyList()),
     val selectedCell: Pair<Int, Int>? = null,
-    val showWin: Boolean = false,
-    val hintsRemaining: Int = 5,
-    val elapsedSeconds: Long = 0L,
-    val difficulty: Difficulty = Difficulty.MEDIUM,
-    val isMuted: Boolean = false
+    val difficulty: Difficulty = Difficulty.MEDIUM
 )
 
 @HiltViewModel
 class KakuroViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val savedStateHandle: SavedStateHandle,
-    private val repository: PreferencesRepository
+    repository: PreferencesRepository
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
+    private val gameSession = GameSession(viewModelScope, savedStateHandle, repository)
 
     private val _state = MutableStateFlow(KakuroUiState(difficulty = difficulty))
     val state: StateFlow<KakuroUiState> = _state.asStateFlow()
-
-    private var timerJob: kotlinx.coroutines.Job? = null
+    val session: StateFlow<SessionState> = gameSession.state
 
     init {
-        viewModelScope.launch {
-            repository.preferences.map { it.isMuted }.distinctUntilChanged().collect { muted ->
-                _state.update { it.copy(isMuted = muted) }
-            }
-        }
         val restored = KakuroBoardSaver.restore(savedStateHandle)
         if (restored == null) {
             newPuzzle()
         } else {
             _state.update { it.copy(board = restored) }
-            if (!restored.isComplete()) startTimer()
         }
     }
 
     fun newPuzzle() {
+        gameSession.reset()
         val board = KakuroPuzzleBank.load(context, difficulty)
-        timerJob?.cancel()
         saveBoard(board)
-        _state.update {
-            it.copy(
-                board = board,
-                selectedCell = null,
-                showWin = false,
-                hintsRemaining = 5,
-                elapsedSeconds = 0L
-            )
-        }
-        startTimer()
+        _state.update { it.copy(board = board, selectedCell = null) }
+        gameSession.start()
     }
 
     fun selectCell(row: Int, col: Int) {
@@ -87,10 +67,9 @@ class KakuroViewModel @Inject constructor(
     fun enterNumber(number: Int) {
         val (row, col) = _state.value.selectedCell ?: return
         val newBoard = _state.value.board.withInput(row, col, number)
-        val isComplete = newBoard.isComplete()
         saveBoard(newBoard)
-        _state.update { it.copy(board = newBoard, showWin = isComplete) }
-        if (isComplete) timerJob?.cancel()
+        _state.update { it.copy(board = newBoard) }
+        if (newBoard.isComplete()) gameSession.complete()
     }
 
     fun clearCell() {
@@ -101,25 +80,17 @@ class KakuroViewModel @Inject constructor(
     }
 
     fun useHint(): Boolean {
-        val state = _state.value
-        if (state.hintsRemaining <= 0) return false
-        val board = state.board
+        if (!gameSession.hasHints) return false
+        val board = _state.value.board
         for (r in 0 until board.rows) {
             for (c in 0 until board.cols) {
                 val cell = board.cellAt(r, c)
                 if (cell is KakuroCell.Input && cell.current != cell.solution) {
+                    gameSession.consumeHint()
                     val newBoard = board.withInput(r, c, cell.solution)
-                    val isComplete = newBoard.isComplete()
                     saveBoard(newBoard)
-                    _state.update {
-                        it.copy(
-                            board = newBoard,
-                            hintsRemaining = it.hintsRemaining - 1,
-                            selectedCell = Pair(r, c),
-                            showWin = isComplete
-                        )
-                    }
-                    if (isComplete) timerJob?.cancel()
+                    _state.update { it.copy(board = newBoard, selectedCell = Pair(r, c)) }
+                    if (newBoard.isComplete()) gameSession.complete()
                     return true
                 }
             }
@@ -127,25 +98,13 @@ class KakuroViewModel @Inject constructor(
         return false
     }
 
-    fun dismissWin() { _state.update { it.copy(showWin = false) } }
+    fun dismissWin() = gameSession.dismissWin()
 
-    fun toggleMute() {
-        viewModelScope.launch { repository.setMuted(!_state.value.isMuted) }
-    }
+    fun toggleMute() = gameSession.toggleMute()
+
+    /** Call when the game screen becomes visible / hidden, so the clock pauses in the background. */
+    fun onScreenVisible() = gameSession.onForeground()
+    fun onScreenHidden() = gameSession.onBackground()
 
     private fun saveBoard(board: KakuroBoard) = KakuroBoardSaver.save(savedStateHandle, board)
-
-    private fun startTimer() {
-        timerJob = viewModelScope.launch {
-            while (true) {
-                delay(1_000)
-                _state.update { it.copy(elapsedSeconds = it.elapsedSeconds + 1) }
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        timerJob?.cancel()
-    }
 }

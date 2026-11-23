@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.session.GameSession
+import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.wordsearch.data.FallbackPuzzles
 import com.payfacto.braingames.feature.wordsearch.data.PuzzleBank
@@ -20,21 +22,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 data class WordSearchUiState(
     val board: WordSearchBoard = WordSearchBoard(Array(8) { CharArray(8) }, emptyList()),
     val hintCell: Pair<Int, Int>? = null,
-    val showWin: Boolean = false,
-    val elapsedSeconds: Long = 0L,
     val difficulty: Difficulty = Difficulty.MEDIUM,
-    val isMuted: Boolean = false,
-    val hintsRemaining: Int = 5,
     val isLoading: Boolean = false
 )
 
@@ -42,35 +39,29 @@ data class WordSearchUiState(
 class WordSearchViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val savedStateHandle: SavedStateHandle,
-    private val repository: PreferencesRepository
+    repository: PreferencesRepository
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
+    private val gameSession = GameSession(viewModelScope, savedStateHandle, repository)
 
     private val _state = MutableStateFlow(WordSearchUiState(difficulty = difficulty))
     val state: StateFlow<WordSearchUiState> = _state.asStateFlow()
-
-    private var timerJob: kotlinx.coroutines.Job? = null
+    val session: StateFlow<SessionState> = gameSession.state
 
     init {
-        viewModelScope.launch {
-            repository.preferences.map { it.isMuted }.distinctUntilChanged().collect { muted ->
-                _state.update { it.copy(isMuted = muted) }
-            }
-        }
         val restored = WordSearchBoardSaver.restore(savedStateHandle)
         if (restored == null) {
             newPuzzle()
         } else {
             _state.update { it.copy(board = restored) }
-            if (!restored.isComplete()) startTimer()
         }
     }
 
     fun newPuzzle() {
-        timerJob?.cancel()
+        gameSession.reset()
         WordSearchBoardSaver.clear(savedStateHandle)
-        _state.update { it.copy(isLoading = true, showWin = false) }
+        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val board = withContext(Dispatchers.Default) {
                 val gridSize = WordSearchGenerator.gridSizeFor(difficulty)
@@ -85,17 +76,8 @@ class WordSearchViewModel @Inject constructor(
                 } ?: FallbackPuzzles.get(context, difficulty)
             }
             saveBoard(board)
-            _state.update {
-                it.copy(
-                    board = board,
-                    hintCell = null,
-                    showWin = false,
-                    elapsedSeconds = 0L,
-                    hintsRemaining = 5,
-                    isLoading = false
-                )
-            }
-            startTimer()
+            _state.update { it.copy(board = board, hintCell = null, isLoading = false) }
+            gameSession.start()
         }
     }
 
@@ -113,57 +95,38 @@ class WordSearchViewModel @Inject constructor(
         val newWords = board.words.toMutableList()
         newWords[matchIdx] = newWords[matchIdx].copy(found = true)
         val newBoard = board.copy(words = newWords)
-        val isComplete = newBoard.isComplete()
         saveBoard(newBoard)
-
         _state.update { it.copy(board = newBoard, hintCell = null) }
 
-        if (isComplete) {
-            timerJob?.cancel()
-            viewModelScope.launch {
-                delay(2_000)
-                _state.update { it.copy(showWin = true) }
-            }
-        }
+        // Leave time to see the revealed hidden word before the win screen appears.
+        if (newBoard.isComplete()) gameSession.complete(winDelay = WIN_REVEAL_DELAY)
         return true
     }
 
     fun useHint(): Boolean {
-        val state = _state.value
-        if (state.hintsRemaining <= 0) return false
-        val unfound = state.board.words.firstOrNull { !it.found } ?: return false
-        _state.update {
-            it.copy(
-                hintCell = Pair(unfound.startRow, unfound.startCol),
-                hintsRemaining = it.hintsRemaining - 1
-            )
-        }
+        if (!gameSession.hasHints) return false
+        val unfound = _state.value.board.words.firstOrNull { !it.found } ?: return false
+        gameSession.consumeHint()
+        _state.update { it.copy(hintCell = Pair(unfound.startRow, unfound.startCol)) }
         viewModelScope.launch {
-            delay(2_000)
+            delay(HINT_DISPLAY_DURATION)
             _state.update { it.copy(hintCell = null) }
         }
         return true
     }
 
-    fun dismissWin() { _state.update { it.copy(showWin = false) } }
+    fun dismissWin() = gameSession.dismissWin()
 
-    fun toggleMute() {
-        viewModelScope.launch { repository.setMuted(!_state.value.isMuted) }
-    }
+    fun toggleMute() = gameSession.toggleMute()
+
+    /** Call when the game screen becomes visible / hidden, so the clock pauses in the background. */
+    fun onScreenVisible() = gameSession.onForeground()
+    fun onScreenHidden() = gameSession.onBackground()
 
     private fun saveBoard(board: WordSearchBoard) = WordSearchBoardSaver.save(savedStateHandle, board)
 
-    private fun startTimer() {
-        timerJob = viewModelScope.launch {
-            while (true) {
-                delay(1_000)
-                _state.update { it.copy(elapsedSeconds = it.elapsedSeconds + 1) }
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        timerJob?.cancel()
+    private companion object {
+        val WIN_REVEAL_DELAY = 2.seconds
+        val HINT_DISPLAY_DURATION = 2.seconds
     }
 }
