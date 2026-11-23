@@ -36,6 +36,7 @@ fun SudokuScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val session by viewModel.session.collectAsStateWithLifecycle()
+    val assists = state.mode.assists
 
     LifecycleStartEffect(viewModel) {
         viewModel.onScreenVisible()
@@ -53,10 +54,12 @@ fun SudokuScreen(
                 hintsRemaining = session.hintsRemaining,
                 isMuted = session.isMuted,
                 onBack = onBack,
-                onHint = {
-                    val used = viewModel.useHint()
-                    if (used) soundManager.play(SoundEvent.CORRECT)
-                },
+                onHint = if (assists.hintsAllowed) {
+                    {
+                        val used = viewModel.useHint()
+                        if (used) soundManager.play(SoundEvent.CORRECT)
+                    }
+                } else null,
                 onNewPuzzle = {
                     soundManager.play(SoundEvent.TAP)
                     viewModel.newPuzzle()
@@ -73,7 +76,11 @@ fun SudokuScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(R.string.hints_remaining, session.hintsRemaining),
+                text = if (assists.hintsAllowed) {
+                    stringResource(R.string.hints_remaining, session.hintsRemaining)
+                } else {
+                    stringResource(R.string.sudoku_hardcore_label)
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -81,6 +88,7 @@ fun SudokuScreen(
             SudokuGrid(
                 board = state.board,
                 selectedCell = state.selectedCell,
+                assists = assists,
                 primaryColor = MaterialTheme.colorScheme.primary,
                 onSurface = MaterialTheme.colorScheme.onSurface,
                 onCellTap = { idx ->

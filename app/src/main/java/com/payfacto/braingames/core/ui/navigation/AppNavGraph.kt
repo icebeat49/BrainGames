@@ -14,6 +14,8 @@ import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.feature.home.HomeScreen
 import com.payfacto.braingames.feature.kakuro.ui.KakuroScreen
 import com.payfacto.braingames.feature.settings.SettingsScreen
+import com.payfacto.braingames.feature.sudoku.model.SudokuMode
+import com.payfacto.braingames.feature.sudoku.ui.SudokuDifficultyPicker
 import com.payfacto.braingames.feature.sudoku.ui.SudokuScreen
 import com.payfacto.braingames.feature.wordsearch.ui.WordSearchScreen
 
@@ -49,19 +51,26 @@ fun AppNavGraph(
         ) { backStack ->
             val gameTypeStr = backStack.arguments?.getString(Screen.ARG_GAME_TYPE) ?: GameType.SUDOKU.name
             val gameType = runCatching { GameType.valueOf(gameTypeStr) }.getOrDefault(GameType.SUDOKU)
+            val onBack: () -> Unit = { navController.popBackStack() }
             IfGameEnabled(gameType, backStack, navController) {
-                DifficultyPickerScreen(
-                    gameType = gameType,
-                    onDifficultySelected = { difficulty ->
-                        val route = when (gameType) {
-                            GameType.SUDOKU      -> Screen.Sudoku.createRoute(difficulty.name)
-                            GameType.KAKURO      -> Screen.Kakuro.createRoute(difficulty.name)
-                            GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name)
-                        }
-                        navController.navigate(route)
-                    },
-                    onBack = { navController.popBackStack() }
-                )
+                when (gameType) {
+                    GameType.SUDOKU -> SudokuDifficultyPicker(
+                        onStart = { difficulty, mode ->
+                            navController.navigate(Screen.Sudoku.createRoute(difficulty.name, mode.name))
+                        },
+                        onBack = onBack
+                    )
+                    GameType.KAKURO -> DifficultyPickerScreen(
+                        gameType = gameType,
+                        onDifficultySelected = { navController.navigate(Screen.Kakuro.createRoute(it.name)) },
+                        onBack = onBack
+                    )
+                    GameType.WORD_SEARCH -> DifficultyPickerScreen(
+                        gameType = gameType,
+                        onDifficultySelected = { navController.navigate(Screen.WordSearch.createRoute(it.name)) },
+                        onBack = onBack
+                    )
+                }
             }
         }
 
@@ -69,7 +78,13 @@ fun AppNavGraph(
         // SavedStateHandle, so the screens themselves don't need it.
         composable(
             route = Screen.Sudoku.route,
-            arguments = listOf(difficultyArgument())
+            arguments = listOf(
+                difficultyArgument(),
+                navArgument(Screen.ARG_MODE) {
+                    type = NavType.StringType
+                    defaultValue = SudokuMode.CLASSIC.name
+                }
+            )
         ) {
             SudokuScreen(
                 soundManager = soundManager,

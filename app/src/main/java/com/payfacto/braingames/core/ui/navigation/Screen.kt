@@ -6,8 +6,9 @@ sealed class Screen(val route: String) {
     object DifficultyPicker : Screen("difficulty/{$ARG_GAME_TYPE}") {
         fun createRoute(gameType: String) = "difficulty/$gameType"
     }
-    object Sudoku : Screen("sudoku/{$ARG_DIFFICULTY}") {
-        fun createRoute(difficulty: String) = "sudoku/$difficulty"
+    /** `mode` is optional so plain `sudoku/{difficulty}` links keep working. */
+    object Sudoku : Screen("sudoku/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}") {
+        fun createRoute(difficulty: String, mode: String) = "sudoku/$difficulty?$ARG_MODE=$mode"
     }
     object Kakuro : Screen("kakuro/{$ARG_DIFFICULTY}") {
         fun createRoute(difficulty: String) = "kakuro/$difficulty"
@@ -20,5 +21,6 @@ sealed class Screen(val route: String) {
         /** Route argument names. Navigation also copies them into each ViewModel's SavedStateHandle. */
         const val ARG_GAME_TYPE = "gameType"
         const val ARG_DIFFICULTY = "difficulty"
+        const val ARG_MODE = "mode"
     }
 }

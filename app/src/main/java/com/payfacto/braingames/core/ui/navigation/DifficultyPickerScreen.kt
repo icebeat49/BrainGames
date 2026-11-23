@@ -32,7 +32,9 @@ import com.payfacto.braingames.core.ui.GameCatalog
 fun DifficultyPickerScreen(
     gameType: GameType,
     onDifficultySelected: (Difficulty) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    /** Game-specific options shown above the difficulty buttons, e.g. Sudoku's mode. */
+    extraOptions: (@Composable () -> Unit)? = null
 ) {
     val titleRes = GameCatalog.infoFor(gameType).titleRes
 
@@ -61,6 +63,10 @@ fun DifficultyPickerScreen(
                 style = MaterialTheme.typography.headlineMedium
             )
             Spacer(Modifier.height(32.dp))
+            if (extraOptions != null) {
+                extraOptions()
+                Spacer(Modifier.height(24.dp))
+            }
             Difficulty.entries.forEach { difficulty ->
                 Button(
                     onClick = { onDifficultySelected(difficulty) },

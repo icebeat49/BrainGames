@@ -11,6 +11,7 @@ import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.sudoku.data.SudokuBoardSaver
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
+import com.payfacto.braingames.feature.sudoku.model.SudokuMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,7 @@ data class SudokuUiState(
     val board: SudokuBoard = SudokuBoard(),
     val selectedCell: Int = -1,
     val difficulty: Difficulty = Difficulty.MEDIUM,
+    val mode: SudokuMode = SudokuMode.CLASSIC,
     val isNotesMode: Boolean = false,
     val isGenerating: Boolean = false
 )
@@ -37,10 +39,17 @@ class SudokuViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
-    private val gameSession =
-        GameSession(viewModelScope, savedStateHandle, repository, timeSource = timeSource)
+    private val mode = SudokuMode.fromName(savedStateHandle[Screen.ARG_MODE])
+    private val assists = mode.assists
+    private val gameSession = GameSession(
+        scope = viewModelScope,
+        savedState = savedStateHandle,
+        preferences = repository,
+        maxHints = assists.maxHints,
+        timeSource = timeSource
+    )
 
-    private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty))
+    private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty, mode = mode))
     val state: StateFlow<SudokuUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
 
@@ -97,11 +106,11 @@ class SudokuViewModel @Inject constructor(
         val newCurrent = state.board.current.copyOf()
         newCurrent[idx] = number
         val newNotes = state.board.notes.copyOf()
-        newNotes[idx] = emptySet()
+        if (assists.clearCellNotesOnEntry) newNotes[idx] = emptySet()
         val newBoard = state.board.copy(current = newCurrent, notes = newNotes)
         saveBoard(newBoard)
         _state.update { it.copy(board = newBoard) }
-        if (newBoard.isComplete()) gameSession.complete()
+        completeIfSolved(newBoard)
     }
 
     fun clearCell() {
@@ -118,7 +127,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun useHint(): Boolean {
-        if (!gameSession.hasHints) return false
+        if (!assists.hintsAllowed || !gameSession.hasHints) return false
         val board = _state.value.board
         val idx = (0 until 81).firstOrNull { i ->
             !board.given[i] && board.current[i] != board.solution[i]
@@ -131,7 +140,7 @@ class SudokuViewModel @Inject constructor(
         val newBoard = board.copy(current = newCurrent, notes = newNotes)
         saveBoard(newBoard)
         _state.update { it.copy(board = newBoard, selectedCell = idx) }
-        if (newBoard.isComplete()) gameSession.complete()
+        completeIfSolved(newBoard)
         return true
     }
 
@@ -142,6 +151,11 @@ class SudokuViewModel @Inject constructor(
     /** Call when the game screen becomes visible / hidden, so the clock pauses in the background. */
     fun onScreenVisible() = gameSession.onForeground()
     fun onScreenHidden() = gameSession.onBackground()
+
+    /** Classic declares the win as soon as the grid is right; Hardcore waits for Check. */
+    private fun completeIfSolved(board: SudokuBoard) {
+        if (assists.autoDetectWin && board.isComplete()) gameSession.complete()
+    }
 
     private fun saveBoard(board: SudokuBoard) = SudokuBoardSaver.save(savedStateHandle, board)
 }

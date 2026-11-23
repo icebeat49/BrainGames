@@ -53,6 +53,13 @@
     <string name="theme_lavender">Lavender</string>
     <string name="theme_midnight">Midnight</string>
 
+    <!-- Sudoku modes -->
+    <string name="sudoku_mode_classic">Classic</string>
+    <string name="sudoku_mode_hardcore">Hardcore</string>
+    <string name="sudoku_mode_classic_description">Highlights, conflict marks and hints.</string>
+    <string name="sudoku_mode_hardcore_description">Pen and paper: no help at all. Check your grid when it is full.</string>
+    <string name="sudoku_hardcore_label">Hardcore mode</string>
+
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d words found</string>
 </resources>

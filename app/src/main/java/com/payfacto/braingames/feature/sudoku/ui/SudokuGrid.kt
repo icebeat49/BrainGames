@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import com.payfacto.braingames.feature.sudoku.model.SudokuAssists
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
 import kotlin.math.floor
 
@@ -19,6 +20,7 @@ import kotlin.math.floor
 fun SudokuGrid(
     board: SudokuBoard,
     selectedCell: Int,
+    assists: SudokuAssists,
     primaryColor: Color,
     onSurface: Color,
     onCellTap: (Int) -> Unit
@@ -37,13 +39,14 @@ fun SudokuGrid(
             }
     ) {
         val cellSize = size.width / 9f
-        drawGrid(board, selectedCell, primaryColor, onSurface, cellSize)
+        drawGrid(board, selectedCell, assists, primaryColor, onSurface, cellSize)
     }
 }
 
 private fun DrawScope.drawGrid(
     board: SudokuBoard,
     selectedCell: Int,
+    assists: SudokuAssists,
     primaryColor: Color,
     onSurface: Color,
     cellSize: Float
@@ -60,9 +63,9 @@ private fun DrawScope.drawGrid(
             val box = (row / 3) * 3 + col / 3
             val bgColor = when {
                 idx == selectedCell -> primaryColor.copy(alpha = 0.4f)
-                selectedValue != 0 && board.current[idx] == selectedValue ->
+                assists.highlightSameNumber && selectedValue != 0 && board.current[idx] == selectedValue ->
                     primaryColor.copy(alpha = 0.2f)
-                row == selectedRow || col == selectedCol || box == selectedBox ->
+                assists.highlightPeers && (row == selectedRow || col == selectedCol || box == selectedBox) ->
                     primaryColor.copy(alpha = 0.12f)
                 else -> Color.Transparent
             }
@@ -75,7 +78,7 @@ private fun DrawScope.drawGrid(
             }
 
             // Conflict highlight
-            if (board.conflictsAt(idx)) {
+            if (assists.showConflicts && board.conflictsAt(idx)) {
                 drawRect(
                     color = Color.Red.copy(alpha = 0.2f),
                     topLeft = Offset(col * cellSize, row * cellSize),
@@ -97,7 +100,7 @@ private fun DrawScope.drawGrid(
             val value = board.current[idx]
             if (value != 0) {
                 val isGiven = board.given[idx]
-                val isConflict = board.conflictsAt(idx)
+                val isConflict = assists.showConflicts && board.conflictsAt(idx)
                 textPaint.color = when {
                     isConflict -> android.graphics.Color.RED
                     isGiven    -> onSurface.toArgb()

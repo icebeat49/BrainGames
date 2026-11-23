@@ -22,7 +22,8 @@ fun GameTopBar(
     hintsRemaining: Int,
     isMuted: Boolean,
     onBack: () -> Unit,
-    onHint: () -> Unit,
+    /** null hides the hint button entirely (e.g. Sudoku Hardcore). */
+    onHint: (() -> Unit)?,
     onNewPuzzle: () -> Unit,
     onToggleMute: () -> Unit
 ) {
@@ -34,11 +35,13 @@ fun GameTopBar(
             }
         },
         actions = {
-            IconButton(onClick = onHint, enabled = hintsRemaining > 0) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = stringResource(R.string.action_hint)
-                )
+            if (onHint != null) {
+                IconButton(onClick = onHint, enabled = hintsRemaining > 0) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = stringResource(R.string.action_hint)
+                    )
+                }
             }
             IconButton(onClick = onNewPuzzle) {
                 Icon(
