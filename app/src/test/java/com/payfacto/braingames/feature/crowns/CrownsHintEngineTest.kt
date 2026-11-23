@@ -2,7 +2,7 @@ package com.payfacto.braingames.feature.crowns
 
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.feature.crowns.CrownsTestGrids.uniqueFiveByFive
-import com.payfacto.braingames.feature.crowns.data.CrownsFallbackPuzzles
+import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.crowns.engine.CrownsGenerator
 import com.payfacto.braingames.feature.crowns.engine.CrownsHint
 import com.payfacto.braingames.feature.crowns.engine.CrownsHintEngine
@@ -91,10 +91,11 @@ class CrownsHintEngineTest {
     }
 
     @Test
-    fun `following hints solves every fallback puzzle`() {
+    fun `following hints solves bundled bank puzzles of every size`() {
         Difficulty.entries.forEach { difficulty ->
-            CrownsFallbackPuzzles.all(difficulty).forEachIndexed { i, p ->
-                assertHintsSolve(p, CrownsBoard.empty(p.size), "fallback $difficulty #$i")
+            val size = CrownsDifficulty.sizeFor(difficulty)
+            CrownsBankFiles.load(size).take(BANK_SAMPLE_PER_SIZE).forEachIndexed { i, p ->
+                assertHintsSolve(p, CrownsBoard.empty(p.size), "bank ${size}x$size #$i")
             }
         }
     }
@@ -158,5 +159,6 @@ class CrownsHintEngineTest {
 
     private companion object {
         const val GENERATED_PER_DIFFICULTY = 20
+        const val BANK_SAMPLE_PER_SIZE = 20
     }
 }

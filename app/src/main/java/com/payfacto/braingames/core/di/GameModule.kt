@@ -1,7 +1,7 @@
 package com.payfacto.braingames.core.di
 
+import com.payfacto.braingames.feature.crowns.data.BundledCrownsPuzzleSource
 import com.payfacto.braingames.feature.crowns.data.CrownsPuzzleSource
-import com.payfacto.braingames.feature.crowns.data.GeneratedCrownsPuzzleSource
 import com.payfacto.braingames.feature.kakuro.data.BundledKakuroPuzzleSource
 import com.payfacto.braingames.feature.kakuro.data.KakuroPuzzleSource
 import com.payfacto.braingames.feature.sudoku.data.GeneratedSudokuPuzzleSource
@@ -29,7 +29,7 @@ abstract class GameModule {
     abstract fun bindWordSearchPuzzleSource(impl: GeneratedWordSearchPuzzleSource): WordSearchPuzzleSource
 
     @Binds
-    abstract fun bindCrownsPuzzleSource(impl: GeneratedCrownsPuzzleSource): CrownsPuzzleSource
+    abstract fun bindCrownsPuzzleSource(impl: BundledCrownsPuzzleSource): CrownsPuzzleSource
 
     companion object {
         /** Clock used by GameSession; tests substitute the coroutine scheduler's virtual time. */

@@ -47,6 +47,19 @@ class CrownsGeneratorTest {
         assertEquals("generator gave up: $failuresByDifficulty", 0, failuresByDifficulty.values.sum())
     }
 
+    @Test
+    fun `a generator with no budget gives up instead of returning a bad puzzle`() {
+        assertEquals(null, CrownsGenerator(Random(1), maxLayouts = 0).generate(Difficulty.EXPERT))
+    }
+
+    @Test
+    fun `the same seed gives the same puzzle`() {
+        val first = CrownsGenerator(Random(99)).generate(Difficulty.MEDIUM)
+        val second = CrownsGenerator(Random(99)).generate(Difficulty.MEDIUM)
+
+        assertTrue(first != null && first == second)
+    }
+
     private fun warmUp() {
         val generator = CrownsGenerator(Random(1))
         Difficulty.entries.forEach { difficulty -> repeat(WARM_UP_ROUNDS) { generator.generate(difficulty) } }
