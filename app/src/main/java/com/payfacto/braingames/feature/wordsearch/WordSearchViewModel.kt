@@ -1,6 +1,5 @@
 package com.payfacto.braingames.feature.wordsearch
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,24 +8,19 @@ import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
-import com.payfacto.braingames.feature.wordsearch.data.FallbackPuzzles
-import com.payfacto.braingames.feature.wordsearch.data.PuzzleBank
-import com.payfacto.braingames.feature.wordsearch.data.WordBank
 import com.payfacto.braingames.feature.wordsearch.data.WordSearchBoardSaver
-import com.payfacto.braingames.feature.wordsearch.data.WordSearchGenerator
+import com.payfacto.braingames.feature.wordsearch.data.WordSearchPuzzleSource
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 data class WordSearchUiState(
     val board: WordSearchBoard = WordSearchBoard(Array(8) { CharArray(8) }, emptyList()),
@@ -37,13 +31,15 @@ data class WordSearchUiState(
 
 @HiltViewModel
 class WordSearchViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val savedStateHandle: SavedStateHandle,
-    repository: PreferencesRepository
+    private val puzzleSource: WordSearchPuzzleSource,
+    repository: PreferencesRepository,
+    timeSource: TimeSource
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
-    private val gameSession = GameSession(viewModelScope, savedStateHandle, repository)
+    private val gameSession =
+        GameSession(viewModelScope, savedStateHandle, repository, timeSource = timeSource)
 
     private val _state = MutableStateFlow(WordSearchUiState(difficulty = difficulty))
     val state: StateFlow<WordSearchUiState> = _state.asStateFlow()
@@ -63,18 +59,7 @@ class WordSearchViewModel @Inject constructor(
         WordSearchBoardSaver.clear(savedStateHandle)
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val board = withContext(Dispatchers.Default) {
-                val gridSize = WordSearchGenerator.gridSizeFor(difficulty)
-                val maxWordLen = gridSize.coerceAtMost(12)
-                val words = WordBank.getWords(context, maxWordLen)
-                val candidates = PuzzleBank.getPuzzles(context).shuffled()
-
-                // Try each candidate puzzle until one yields a verified board (no random
-                // filler is ever produced — a board either satisfies the rules or is null).
-                candidates.firstNotNullOfOrNull { puzzle ->
-                    WordSearchGenerator.generate(words, puzzle, difficulty)
-                } ?: FallbackPuzzles.get(context, difficulty)
-            }
+            val board = puzzleSource.newPuzzle(difficulty)
             saveBoard(board)
             _state.update { it.copy(board = board, hintCell = null, isLoading = false) }
             gameSession.start()

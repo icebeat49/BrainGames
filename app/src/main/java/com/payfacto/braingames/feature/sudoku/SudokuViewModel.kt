@@ -9,17 +9,16 @@ import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.sudoku.data.SudokuBoardSaver
-import com.payfacto.braingames.feature.sudoku.data.SudokuGenerator
+import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.time.TimeSource
 
 data class SudokuUiState(
     val board: SudokuBoard = SudokuBoard(),
@@ -32,11 +31,14 @@ data class SudokuUiState(
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    repository: PreferencesRepository
+    private val puzzleSource: SudokuPuzzleSource,
+    repository: PreferencesRepository,
+    timeSource: TimeSource
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
-    private val gameSession = GameSession(viewModelScope, savedStateHandle, repository)
+    private val gameSession =
+        GameSession(viewModelScope, savedStateHandle, repository, timeSource = timeSource)
 
     private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty))
     val state: StateFlow<SudokuUiState> = _state.asStateFlow()
@@ -62,7 +64,7 @@ class SudokuViewModel @Inject constructor(
             )
         }
         viewModelScope.launch {
-            val board = withContext(Dispatchers.Default) { SudokuGenerator.generate(difficulty) }
+            val board = puzzleSource.newPuzzle(difficulty)
             saveBoard(board)
             _state.update { it.copy(board = board, isGenerating = false) }
             gameSession.start()

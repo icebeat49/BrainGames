@@ -41,6 +41,7 @@ hilt-android                = { group = "com.google.dagger",            name = "
 hilt-compiler               = { group = "com.google.dagger",            name = "hilt-android-compiler",         version.ref = "hilt" }
 hilt-navigation-compose     = { group = "androidx.hilt",                name = "hilt-navigation-compose",       version.ref = "hiltNavigationCompose" }
 kotlinx-coroutines-android  = { group = "org.jetbrains.kotlinx",        name = "kotlinx-coroutines-android",    version.ref = "coroutines" }
+kotlinx-coroutines-test     = { group = "org.jetbrains.kotlinx",        name = "kotlinx-coroutines-test",       version.ref = "coroutines" }
 lottie-compose              = { group = "com.airbnb.android",           name = "lottie-compose",                version.ref = "lottie" }
 junit                       = { group = "junit",                        name = "junit",                         version.ref = "junit" }
 androidx-junit              = { group = "androidx.test.ext",            name = "junit",                         version.ref = "junitVersion" }

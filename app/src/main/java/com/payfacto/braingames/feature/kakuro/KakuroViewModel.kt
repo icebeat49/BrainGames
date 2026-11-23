@@ -1,6 +1,5 @@
 package com.payfacto.braingames.feature.kakuro
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,16 +9,16 @@ import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.kakuro.data.KakuroBoardSaver
-import com.payfacto.braingames.feature.kakuro.data.KakuroPuzzleBank
+import com.payfacto.braingames.feature.kakuro.data.KakuroPuzzleSource
 import com.payfacto.braingames.feature.kakuro.model.KakuroBoard
 import com.payfacto.braingames.feature.kakuro.model.KakuroCell
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
+import kotlin.time.TimeSource
 
 data class KakuroUiState(
     val board: KakuroBoard = KakuroBoard(0, 0, emptyList()),
@@ -29,13 +28,15 @@ data class KakuroUiState(
 
 @HiltViewModel
 class KakuroViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val savedStateHandle: SavedStateHandle,
-    repository: PreferencesRepository
+    private val puzzleSource: KakuroPuzzleSource,
+    repository: PreferencesRepository,
+    timeSource: TimeSource
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
-    private val gameSession = GameSession(viewModelScope, savedStateHandle, repository)
+    private val gameSession =
+        GameSession(viewModelScope, savedStateHandle, repository, timeSource = timeSource)
 
     private val _state = MutableStateFlow(KakuroUiState(difficulty = difficulty))
     val state: StateFlow<KakuroUiState> = _state.asStateFlow()
@@ -52,7 +53,7 @@ class KakuroViewModel @Inject constructor(
 
     fun newPuzzle() {
         gameSession.reset()
-        val board = KakuroPuzzleBank.load(context, difficulty)
+        val board = puzzleSource.newPuzzle(difficulty)
         saveBoard(board)
         _state.update { it.copy(board = board, selectedCell = null) }
         gameSession.start()
