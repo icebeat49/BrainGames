@@ -81,7 +81,6 @@
 
     <!-- Shared actions -->
     <string name="action_clear">Clear</string>
-    <string name="action_clear_all">Clear all</string>
     <string name="action_cancel">Cancel</string>
 
     <!-- Crowns -->
@@ -91,6 +90,8 @@
     <string name="crowns_mode_hardcore_description">No help at all. Check your grid once every crown is placed.</string>
     <string name="crowns_mark_with">Mark: %1$s</string>
     <string name="crowns_gesture_help">Tap: mark · Double tap: crown · Drag from an empty cell: mark · Drag from a mark: erase</string>
+    <string name="crowns_clear_marks_description">Clear marks: remove every ✕ and ?, keep the crowns</string>
+    <string name="crowns_clear_all_description">Clear all: empty the whole grid, crowns included</string>
     <string name="crowns_clear_title">Clear the grid?</string>
     <string name="crowns_clear_message">Every crown and mark will be removed. You can undo this.</string>
 

@@ -13,15 +13,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -156,12 +158,17 @@ fun CrownsScreen(
             Spacer(Modifier.height(16.dp))
             Controls(
                 canUndo = state.canUndo,
+                hasMarks = state.hasMarks,
                 isQuestionMode = state.isQuestionMode,
                 onUndo = {
                     viewModel.undo()
                     soundManager.play(SoundEvent.TAP)
                 },
                 onToggleQuestionMode = viewModel::toggleQuestionMode,
+                onClearMarks = {
+                    viewModel.clearMarks()
+                    soundManager.play(SoundEvent.TAP)
+                },
                 onClearAll = { confirmClear = true }
             )
 
@@ -240,29 +247,33 @@ fun CrownsScreen(
     }
 }
 
+/** Undo · ✕/? toggle · Clear marks · Clear all. Icon buttons keep the row within a 360dp phone. */
 @Composable
 private fun Controls(
     canUndo: Boolean,
+    hasMarks: Boolean,
     isQuestionMode: Boolean,
     onUndo: () -> Unit,
     onToggleQuestionMode: () -> Unit,
+    onClearMarks: () -> Unit,
     onClearAll: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         FilledTonalButton(onClick = onUndo, enabled = canUndo) {
             Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.action_undo))
         }
-        Spacer(Modifier.width(12.dp))
         FilledTonalButton(onClick = onToggleQuestionMode) {
             Text(stringResource(R.string.crowns_mark_with, if (isQuestionMode) "?" else "✕"))
         }
-        Spacer(Modifier.width(12.dp))
-        FilledTonalButton(onClick = onClearAll) {
-            Text(stringResource(R.string.action_clear_all))
+        FilledTonalIconButton(onClick = onClearMarks, enabled = hasMarks) {
+            Icon(Icons.Default.CleaningServices, contentDescription = stringResource(R.string.crowns_clear_marks_description))
+        }
+        FilledTonalIconButton(onClick = onClearAll) {
+            Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.crowns_clear_all_description))
         }
     }
 }

@@ -63,6 +63,9 @@ data class CrownsUiState(
 
     /** Hardcore's Check button: enabled once N crowns are on the board. */
     val canCheck: Boolean get() = isPlayable && board.crowns.size == puzzle?.size
+
+    /** "Clear marks" is enabled while any X or ? is on the board. */
+    val hasMarks: Boolean get() = board.marks.any { it == CellMark.CROSS || it == CellMark.QUESTION }
 }
 
 @HiltViewModel
@@ -180,6 +183,14 @@ class CrownsViewModel @Inject constructor(
     fun undo() {
         val previous = undoStack.pop() ?: return
         applyChange(previous, recordUndo = false)
+    }
+
+    /** Removes every X and ? and keeps the crowns, as one undoable step. No confirmation. */
+    fun clearMarks() {
+        val state = _state.value
+        if (!state.isPlayable) return
+        val marked = state.board.cellsWith(CellMark.CROSS) + state.board.cellsWith(CellMark.QUESTION)
+        applyChange(state.board.withMarks(marked, CellMark.EMPTY), recordUndo = true)
     }
 
     /** Removes every mark, as one undoable step. */

@@ -338,6 +338,54 @@ class CrownsViewModelTest {
     }
 
     @Test
+    fun `clear marks removes every cross and question mark and keeps the crowns`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.tap(cell(1, 1))
+        viewModel.toggleQuestionMode()
+        viewModel.tap(cell(3, 3))
+        viewModel.placeCrown(cell(0, 0))
+
+        viewModel.clearMarks()
+
+        val board = viewModel.state.value.board
+        assertEquals(emptyBoard.withMark(cell(0, 0), CellMark.CROWN), board)
+        assertFalse(viewModel.state.value.hasMarks)
+    }
+
+    @Test
+    fun `clear marks is one undo step`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.tap(cell(1, 1))
+        viewModel.tap(cell(2, 3))
+        val beforeClear = viewModel.state.value.board
+
+        viewModel.clearMarks()
+        viewModel.undo()
+
+        assertEquals(beforeClear, viewModel.state.value.board)
+    }
+
+    @Test
+    fun `clear marks is unavailable without marks`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        val onEmptyBoard = viewModel.state.value.hasMarks
+
+        viewModel.placeCrown(cell(0, 0))
+
+        assertFalse(onEmptyBoard)
+        assertFalse(viewModel.state.value.hasMarks)
+    }
+
+    @Test
+    fun `clear marks with no marks changes nothing and adds no undo`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+
+        viewModel.clearMarks()
+
+        assertFalse(viewModel.state.value.canUndo)
+    }
+
+    @Test
     fun `clear all empties the board and can be undone`() = runTest(mainDispatcher.dispatcher) {
         val viewModel = classic()
         viewModel.tap(cell(1, 1))
