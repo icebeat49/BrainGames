@@ -6,11 +6,11 @@ import com.payfacto.braingames.core.model.Difficulty
 object CrownsDifficulty {
 
     fun sizeFor(difficulty: Difficulty): Int = when (difficulty) {
-        Difficulty.VERY_EASY -> 5
-        Difficulty.EASY      -> 6
-        Difficulty.MEDIUM    -> 7
-        Difficulty.HARD      -> 8
-        Difficulty.EXPERT    -> 9
+        Difficulty.VERY_EASY -> 7
+        Difficulty.EASY      -> 8
+        Difficulty.MEDIUM    -> 9
+        Difficulty.HARD      -> 10
+        Difficulty.EXPERT    -> 11
     }
 
     /**

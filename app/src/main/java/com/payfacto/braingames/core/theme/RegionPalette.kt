@@ -5,8 +5,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
- * Fill colours for puzzle regions. Light: Paul Tol's "light" qualitative scheme, chosen to
- * stay distinguishable with common colour-vision deficiencies, plus a lavender as 10th.
+ * Fill colours for puzzle regions, one per region up to 11 (the largest grid). Light: Paul
+ * Tol's "light" qualitative scheme, chosen to stay distinguishable with common colour-vision
+ * deficiencies, plus a lavender and a sand tone.
  * Dark: the same hues darkened so light marks (onSurface) stay readable on them.
  * Regions also get thick borders, so colour is never the only cue.
  */
@@ -32,6 +33,7 @@ val LightRegionPalette = RegionPalette(
         Color(0xFFAAAA00), // olive
         Color(0xFFDDDDDD), // pale grey
         Color(0xFFCCBBEE), // lavender
+        Color(0xFFE2C9A4), // sand (11th, for 11×11 grids)
     ),
     // Light fills: a very dark piece with a white rim.
     pieceFill = Color(0xFF231C3A),
@@ -50,6 +52,7 @@ val DarkRegionPalette = RegionPalette(
         Color(0xFF6B5200),
         Color(0xFF555555),
         Color(0xFF54467A),
+        Color(0xFF6E5A3C),
     ),
     // Dark fills: a bright gold piece with a near-black rim.
     pieceFill = Color(0xFFFFD54F),

@@ -10,8 +10,8 @@ import kotlin.random.Random
  * (CrownsFallbackPrinter in the unit tests) and re-checked by CrownsFallbackPuzzlesTest:
  * valid regions, unique solution, solvable by logic, at their difficulty.
  *
- * Each entry: the solution as one column digit per row, then one string per row in which
- * each letter is a region ('A' = region 0).
+ * Each entry: the solution as one column letter per row ('A' = column 0, so 11 columns fit),
+ * then one string per row in which each letter is a region ('A' = region 0).
  */
 object CrownsFallbackPuzzles {
 
@@ -23,35 +23,35 @@ object CrownsFallbackPuzzles {
     private fun puzzle(solution: String, vararg rows: String) = CrownsPuzzle(
         size = rows.size,
         regions = rows.joinToString("").map { it - 'A' }.toIntArray(),
-        solution = solution.map { it - '0' }.toIntArray()
+        solution = solution.map { it - 'A' }.toIntArray()
     )
 
     private val bank: Map<Difficulty, List<CrownsPuzzle>> by lazy {
         mapOf(
             Difficulty.VERY_EASY to listOf(
-                puzzle("03142", "BBDDD", "BBDDD", "BEEDD", "BEAAA", "BBCCA"),
-                puzzle("20314", "EECDD", "EDDDA", "EDDDA", "BBDDA", "BAAAA"),
-                puzzle("42031", "DDDDC", "DBBBE", "DBBEE", "ABBEE", "AABEE"),
+                puzzle("CAFBDGE", "ABBBGGG", "AAABBGG", "AAABDGG", "ADDDDGG", "DDFCDGG", "DDFFFGE", "DDDFFEE"),
+                puzzle("DFBGEAC", "AAAABBB", "CAAGBBF", "CCCGFFF", "CCGGFFF", "CGGGGFF", "EGDDDFF", "DDDFFFF"),
+                puzzle("DGBFACE", "GGGGAAA", "GGGAAEA", "GBEAAEE", "GEEEEEE", "FFFFFEE", "FDDFCCE", "FDCCCEE"),
             ),
             Difficulty.EASY to listOf(
-                puzzle("251304", "FFFFCC", "AAADDC", "ABADDD", "AADDDE", "ADDEEE", "DDDDEE"),
-                puzzle("305241", "BBCCEE", "BAAFFE", "AAADFE", "ADADFF", "DDADFF", "DDDDDD"),
-                puzzle("142053", "BBBBEE", "BBBBEE", "BBCEEE", "DBCEFE", "CCCFFF", "CCCAFF"),
+                puzzle("HDBEGACF", "CAAAAAFB", "CAAAEFFF", "CCEEEFFF", "EEEEEEEF", "EEEHHEFF", "DGEEHEEF", "DGGEHHFF", "DEEEEHHF"),
+                puzzle("HEACGDBF", "CCEEEEEB", "CCDDEEEE", "CDDDDDFE", "GGDHDFFF", "GGDHDHFF", "GHHHDHHA", "GGGHHHAA", "GGHHHAAA"),
+                puzzle("CEADFHBG", "AAAAAEEE", "ABAAEEEE", "FBAAHHHH", "CBABHHHH", "CBBBDDDH", "CBBHHHHH", "CCBBHCCH", "CCCCCCGH"),
             ),
             Difficulty.MEDIUM to listOf(
-                puzzle("6253041", "AAAEFFC", "AAAEFFF", "DAEEFFF", "DAEEFFF", "DBBBBFF", "DDBBBFF", "GGBBBBF"),
-                puzzle("1352604", "BGDDFFF", "BBDDFFF", "BEEDFFF", "BEEEFFF", "BBEEFFA", "BBBCFFC", "BBBCCCC"),
-                puzzle("3514260", "ABBBBCC", "ABBGBCG", "AEGGBGG", "AADGGGG", "AADFFFF", "AAAAAAF", "AAAAAAA"),
+                puzzle("GBFAHECID", "CCCCCDEEE", "CCIIIDDEG", "HHIIIDDEG", "HIIIDDDGG", "BBIIIIIGI", "BBBIIIIII", "BBBIAIIII", "BBBIAIIFF", "BBBAAFFFF"),
+                puzzle("DHEBFIAGC", "DDDDDHHHH", "GDDDDHHHH", "GGGGICHHH", "GGCCCCHHH", "GGCCCCHHH", "GGCCCCCCB", "ECCCCACBB", "EFCCAAABB", "FFFAAAABB"),
+                puzzle("BDIAFCHEG", "DDDDDIIII", "DDHHDHHHI", "HHHDDHHHI", "CHHHHHIII", "CHHHHBFIF", "CGEHFFFFF", "CGGGFFFFF", "CCAGGGAFF", "CCAAAAAFF"),
             ),
             Difficulty.HARD to listOf(
-                puzzle("07142536", "DDHHHFFF", "DHHHHCFF", "DHHHHCCF", "DDAACCCF", "DDAAACBB", "ADAAABBB", "AAAGGBEB", "AAAGGBEB"),
-                puzzle("70625314", "BBBBAAAA", "BEEBBAFA", "EEBBBFFA", "EEEBFFFF", "EEBBFDFF", "EEECDDFF", "GGEDDDDF", "GGGGHHDD"),
-                puzzle("75361420", "HHGGGGEF", "HHGGEEEF", "HGGGGGEC", "HHGGACCC", "HHHGAAAC", "DHHAAAAC", "DHBAAAAA", "DHHAAAAA"),
+                puzzle("DJECGAFHBI", "IIIIHHDDDD", "IIIIIHHHHD", "JJJCCHHHHH", "JJJJJHHHHH", "BJEEHHHHHH", "BJEHHHHAHH", "BBEEEEHAAH", "GBEEEHHAHH", "GGEEEHAAFF", "GGGEEHAFFF"),
+                puzzle("BEHDIAFCJG", "GGAAAAABBB", "GAAAACCCBB", "GAAAACCBBB", "EFFDCCCCCJ", "EEFFCCHHCJ", "EFFFCHHJJJ", "FFFFHHIIIJ", "FFFHHIIIIJ", "FFHHHIIIJJ", "FFHHHIIIII"),
+                puzzle("EJAHDFBGCI", "CEEEEEEEEE", "CEAAEAEAEF", "CCAAAAAAAA", "GCCGGDDADA", "GGCGGGDDDD", "GGGGDDDDDJ", "GIBGGDJJDJ", "GBBJDDJDDJ", "GGBJJJJJJJ", "GGBBJJJHHJ"),
             ),
             Difficulty.EXPERT to listOf(
-                puzzle("148037526", "GGGGIIIII", "IIGGIICCC", "IIGGGICIC", "FIIIIICII", "FFFHIIIII", "AFHHIDDDD", "AFHEEBDDD", "AFAEEBDDD", "AAAAEEEDD"),
-                puzzle("742530681", "BBGGGGGEF", "BBBBGGGGF", "BBBBGIIFF", "BDDDDIFFF", "BDDDDDFFF", "CDDDHHFFF", "CDDDDHHHF", "CCDFFHFFF", "CADDFFFFF"),
-                puzzle("635817420", "EIIIIAGGG", "EIIIIAGGG", "EIIICAAFD", "EIEICCAFD", "EEEICCAFD", "HEIICAAFF", "HEICCCCCF", "HHHCHFFCF", "BHHHHHFFF"),
+                puzzle("JFAECGIKDHB", "CCCHHDDDDAA", "GGCCHDHHDDA", "GGCCHHHHHDA", "CGCCHHJJJJA", "CCCCJJJJJJK", "CCJJJIJKJKK", "CCFFJIJKKKK", "CCFJJIIIKKB", "FFFFJIIKKKI", "FFFFFFIIIII", "FEFFIIIIIII"),
+                puzzle("BKIAEJDHFCG", "JJJJJJJJHHH", "JJDJJDJHHKK", "DJDDDDJJHHH", "DJDDDEEEEAI", "DDDDEEAAAAI", "DDFEEEAIAII", "DDFFFEAIIII", "FFFFFEABIII", "FFAAFAABIBB", "FFGAAAABBBB", "GGGGGACCCBB"),
+                puzzle("ECJGIBHFDKA", "EEEEEEEAAAA", "KKKEEEAAAAA", "KKEEHAAAAAA", "KKKHHHBBCCA", "KKKHHHIBCAA", "KDKKKHIICAJ", "DDDHHHJIAAJ", "HHDHJJJIJJJ", "HHHHHHJJJJJ", "HHHHJJJGGJG", "FHHHHHJGGGG"),
             ),
         )
     }

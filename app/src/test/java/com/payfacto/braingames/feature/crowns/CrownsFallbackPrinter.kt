@@ -25,7 +25,8 @@ class CrownsFallbackPrinter {
                     val rows = puzzle.rowCells.joinToString(", ") { row ->
                         "\"" + row.joinToString("") { ('A' + puzzle.regionOf(it)).toString() } + "\""
                     }
-                    append("            puzzle(\"${puzzle.solution.joinToString("")}\", $rows),\n")
+                    val solution = puzzle.solution.joinToString("") { ('A' + it).toString() }
+                    append("            puzzle(\"$solution\", $rows),\n")
                 }
                 append("        ),\n")
             }
