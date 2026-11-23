@@ -2,7 +2,7 @@ package com.payfacto.braingames.feature.sudoku
 
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.feature.sudoku.model.SudokuAssists
-import com.payfacto.braingames.feature.sudoku.model.SudokuMode
+import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -26,7 +26,7 @@ class SudokuClassicTest {
     fun `a route without a mode starts Classic`() = runTest(mainDispatcher.dispatcher) {
         val viewModel = with(fixture) { newViewModel() }
 
-        assertEquals(SudokuMode.CLASSIC, viewModel.state.value.mode)
+        assertEquals(GameMode.CLASSIC, viewModel.state.value.mode)
     }
 
     @Test
@@ -40,7 +40,7 @@ class SudokuClassicTest {
                 autoDetectWin = true,
                 clearCellNotesOnEntry = true
             ),
-            SudokuMode.CLASSIC.assists
+            SudokuAssists.forMode(GameMode.CLASSIC)
         )
     }
 
@@ -97,6 +97,6 @@ class SudokuClassicTest {
 
     @Test
     fun `there is no Check button in Classic`() {
-        assertTrue(SudokuMode.CLASSIC.assists.autoDetectWin)
+        assertTrue(SudokuAssists.forMode(GameMode.CLASSIC).autoDetectWin)
     }
 }

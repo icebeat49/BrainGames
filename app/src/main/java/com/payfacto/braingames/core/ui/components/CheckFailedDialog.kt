@@ -1,4 +1,4 @@
-package com.payfacto.braingames.feature.sudoku.ui
+package com.payfacto.braingames.core.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
@@ -9,11 +9,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.payfacto.braingames.R
-import com.payfacto.braingames.feature.sudoku.model.FailedCheck
+import com.payfacto.braingames.core.model.FailedCheck
 
 /**
- * Shown after a Hardcore check finds mistakes. The player chooses how much to learn:
- * nothing, how many cells are wrong, or which ones.
+ * Shown after a Hardcore check finds mistakes, in any game. The player chooses how much
+ * to learn: nothing, how many cells are wrong, or which ones.
  */
 @Composable
 fun CheckFailedDialog(
@@ -24,17 +24,13 @@ fun CheckFailedDialog(
 ) {
     AlertDialog(
         onDismissRequest = onKeepGoing,
-        title = { Text(stringResource(R.string.sudoku_check_failed_title)) },
+        title = { Text(stringResource(R.string.check_failed_title)) },
         text = {
             Text(
                 if (failedCheck.isCountShown) {
-                    pluralStringResource(
-                        R.plurals.sudoku_check_wrong_count,
-                        failedCheck.wrongCount,
-                        failedCheck.wrongCount
-                    )
+                    pluralStringResource(R.plurals.check_wrong_count, failedCheck.wrongCount, failedCheck.wrongCount)
                 } else {
-                    stringResource(R.string.sudoku_check_failed_message)
+                    stringResource(R.string.check_failed_message)
                 }
             )
         },
@@ -43,14 +39,14 @@ fun CheckFailedDialog(
             Column(horizontalAlignment = Alignment.End) {
                 if (!failedCheck.isCountShown) {
                     TextButton(onClick = onShowCount) {
-                        Text(stringResource(R.string.sudoku_check_show_count))
+                        Text(stringResource(R.string.check_show_count))
                     }
                 }
                 TextButton(onClick = onShowWhere) {
-                    Text(stringResource(R.string.sudoku_check_show_where))
+                    Text(stringResource(R.string.check_show_where))
                 }
                 TextButton(onClick = onKeepGoing) {
-                    Text(stringResource(R.string.sudoku_check_keep_going))
+                    Text(stringResource(R.string.check_keep_going))
                 }
             }
         }

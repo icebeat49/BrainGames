@@ -29,7 +29,9 @@ import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.GameTopBar
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
 import com.payfacto.braingames.feature.sudoku.SudokuViewModel
-import com.payfacto.braingames.feature.sudoku.model.CheckResult
+import com.payfacto.braingames.core.model.CheckResult
+import com.payfacto.braingames.core.ui.components.CheckFailedDialog
+import com.payfacto.braingames.feature.sudoku.model.SudokuAssists
 
 @Composable
 fun SudokuScreen(
@@ -39,7 +41,7 @@ fun SudokuScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val session by viewModel.session.collectAsStateWithLifecycle()
-    val assists = state.mode.assists
+    val assists = SudokuAssists.forMode(state.mode)
 
     LifecycleStartEffect(viewModel) {
         viewModel.onScreenVisible()
@@ -82,7 +84,7 @@ fun SudokuScreen(
                 text = if (assists.hintsAllowed) {
                     stringResource(R.string.hints_remaining, session.hintsRemaining)
                 } else {
-                    stringResource(R.string.sudoku_hardcore_label)
+                    stringResource(R.string.mode_hardcore_label)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -131,7 +133,7 @@ fun SudokuScreen(
                     enabled = state.canCheck,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.sudoku_check))
+                    Text(stringResource(R.string.action_check))
                 }
             }
         }

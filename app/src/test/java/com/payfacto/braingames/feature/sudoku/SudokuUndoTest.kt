@@ -1,7 +1,7 @@
 package com.payfacto.braingames.feature.sudoku
 
 import com.payfacto.braingames.core.session.GameSession
-import com.payfacto.braingames.feature.sudoku.model.SudokuMode
+import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.TestBoards
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,7 +19,7 @@ class SudokuUndoTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
-    private val fixture = SudokuFixture(SudokuMode.CLASSIC)
+    private val fixture = SudokuFixture(GameMode.CLASSIC)
     private val emptyBoard = TestBoards.sudoku()
 
     @Test

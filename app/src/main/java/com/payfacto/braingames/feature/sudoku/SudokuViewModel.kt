@@ -11,10 +11,11 @@ import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.core.undo.UndoStack
 import com.payfacto.braingames.feature.sudoku.data.SudokuBoardSaver
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
-import com.payfacto.braingames.feature.sudoku.model.CheckResult
-import com.payfacto.braingames.feature.sudoku.model.FailedCheck
+import com.payfacto.braingames.core.model.CheckResult
+import com.payfacto.braingames.core.model.FailedCheck
+import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.feature.sudoku.model.SudokuAssists
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
-import com.payfacto.braingames.feature.sudoku.model.SudokuMode
 import com.payfacto.braingames.feature.sudoku.model.SudokuMove
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +30,7 @@ data class SudokuUiState(
     val board: SudokuBoard = SudokuBoard(),
     val selectedCell: Int = -1,
     val difficulty: Difficulty = Difficulty.MEDIUM,
-    val mode: SudokuMode = SudokuMode.CLASSIC,
+    val mode: GameMode = GameMode.CLASSIC,
     val isNotesMode: Boolean = false,
     val isGenerating: Boolean = false,
     val canUndo: Boolean = false,
@@ -51,8 +52,8 @@ class SudokuViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
-    private val mode = SudokuMode.fromName(savedStateHandle[Screen.ARG_MODE])
-    private val assists = mode.assists
+    private val mode = GameMode.fromName(savedStateHandle[Screen.ARG_MODE])
+    private val assists = SudokuAssists.forMode(mode)
     private val gameSession = GameSession(
         scope = viewModelScope,
         savedState = savedStateHandle,

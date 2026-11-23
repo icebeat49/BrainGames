@@ -1,24 +1,10 @@
 package com.payfacto.braingames.feature.sudoku.model
 
-enum class SudokuMode {
-    CLASSIC,
-    HARDCORE;
-
-    val assists: SudokuAssists
-        get() = when (this) {
-            CLASSIC  -> SudokuAssists.Classic
-            HARDCORE -> SudokuAssists.Hardcore
-        }
-
-    companion object {
-        /** Parses a route argument or stored value, falling back to [CLASSIC]. */
-        fun fromName(value: String?): SudokuMode = entries.firstOrNull { it.name == value } ?: CLASSIC
-    }
-}
+import com.payfacto.braingames.core.model.GameMode
 
 /**
- * Which help the game gives. Every assist is read in one place: the grid for highlights
- * and conflict marks, the ViewModel for hints and win detection.
+ * Which help Sudoku gives in each [GameMode]. Every assist is read in one place: the grid
+ * for highlights and conflict marks, the ViewModel for hints and win detection.
  */
 data class SudokuAssists(
     val highlightPeers: Boolean,
@@ -52,5 +38,10 @@ data class SudokuAssists(
             autoDetectWin = false,
             clearCellNotesOnEntry = true,
         )
+
+        fun forMode(mode: GameMode): SudokuAssists = when (mode) {
+            GameMode.CLASSIC  -> Classic
+            GameMode.HARDCORE -> Hardcore
+        }
     }
 }

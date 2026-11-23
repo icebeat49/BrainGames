@@ -5,7 +5,7 @@ import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
-import com.payfacto.braingames.feature.sudoku.model.SudokuMode
+import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
 import kotlinx.coroutines.test.TestScope
@@ -17,7 +17,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
  *
  * The test board has five open cells, 0–4, whose solution is 1–5.
  */
-class SudokuFixture(mode: SudokuMode? = null) {
+class SudokuFixture(mode: GameMode? = null) {
 
     val savedState = SavedStateHandle(
         buildMap {

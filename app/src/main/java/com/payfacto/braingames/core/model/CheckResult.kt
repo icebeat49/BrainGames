@@ -1,10 +1,10 @@
-package com.payfacto.braingames.feature.sudoku.model
+package com.payfacto.braingames.core.model
 
 /** Outcome of the player asking to check a Hardcore grid. */
 sealed interface CheckResult {
     data object Solved : CheckResult
 
-    /** [wrongCells] are the indices whose value differs from the solution (empty counts as wrong). */
+    /** [wrongCells] are the cells that differ from the solution. */
     data class Incorrect(val wrongCells: Set<Int>) : CheckResult
 }
 

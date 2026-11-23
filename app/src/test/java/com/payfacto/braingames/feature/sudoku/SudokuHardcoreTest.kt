@@ -1,7 +1,7 @@
 package com.payfacto.braingames.feature.sudoku
 
-import com.payfacto.braingames.feature.sudoku.model.CheckResult
-import com.payfacto.braingames.feature.sudoku.model.SudokuMode
+import com.payfacto.braingames.core.model.CheckResult
+import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.TestBoards
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,7 +19,7 @@ class SudokuHardcoreTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
-    private val fixture = SudokuFixture(SudokuMode.HARDCORE)
+    private val fixture = SudokuFixture(GameMode.HARDCORE)
 
     /** Fills every open cell, with wrong digits in [wrongCells]. */
     private fun SudokuViewModel.fillWithMistakes(vararg wrongCells: Int) {
@@ -34,7 +34,7 @@ class SudokuHardcoreTest {
     fun `reads the mode from the route`() = runTest(mainDispatcher.dispatcher) {
         val viewModel = with(fixture) { newViewModel() }
 
-        assertEquals(SudokuMode.HARDCORE, viewModel.state.value.mode)
+        assertEquals(GameMode.HARDCORE, viewModel.state.value.mode)
     }
 
     @Test
@@ -200,7 +200,7 @@ class SudokuHardcoreTest {
 
         val recreated = with(fixture) { newViewModel() }
 
-        assertEquals(SudokuMode.HARDCORE, recreated.state.value.mode)
+        assertEquals(GameMode.HARDCORE, recreated.state.value.mode)
         assertFalse(recreated.useHint())
         assertEquals(1, fixture.puzzleSource.requests)
     }
