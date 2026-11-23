@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.payfacto.braingames.R
@@ -12,6 +11,7 @@ import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
+import com.payfacto.braingames.feature.crowns.ui.CrownIcon
 import com.payfacto.braingames.feature.wordsearch.data.WordSearchGenerator
 
 /** How a game is presented in menus. */
@@ -56,7 +56,7 @@ object GameCatalog {
         GameType.CROWNS -> GameInfo(
             titleRes = R.string.home_play_crowns,
             descriptionRes = R.string.home_desc_crowns,
-            icon = Icons.Default.Pets,
+            icon = CrownIcon,
             modeDescriptions = mapOf(
                 GameMode.CLASSIC to R.string.crowns_mode_classic_description,
                 GameMode.HARDCORE to R.string.crowns_mode_hardcore_description

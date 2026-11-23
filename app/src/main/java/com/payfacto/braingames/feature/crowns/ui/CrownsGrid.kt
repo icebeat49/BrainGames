@@ -10,17 +10,15 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
@@ -128,7 +126,12 @@ private fun GridCanvas(
     palette: RegionPalette
 ) {
     val colors = MaterialTheme.colorScheme
-    val crownPainter = rememberVectorPainter(Icons.Default.Pets)
+    val crownPainter = rememberVectorPainter(
+        remember(palette) { crownVector(fill = palette.pieceFill, outline = palette.pieceOutline) }
+    )
+    val flaggedCrownPainter = rememberVectorPainter(
+        remember(palette, colors.error) { crownVector(fill = colors.error, outline = palette.pieceOutline) }
+    )
     val textMeasurer = rememberTextMeasurer()
     val questionStyle = TextStyle(color = colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 20.sp)
 
@@ -150,7 +153,6 @@ private fun GridCanvas(
         for (cell in 0 until puzzle.cellCount) {
             val origin = topLeft(cell)
             val isFlagged = cell in highlights.conflictCells || cell in highlights.errorCells
-            val markColor = if (isFlagged) colors.error else colors.onSurface
             when (board[cell]) {
                 CellMark.EMPTY -> Unit
                 CellMark.CROSS -> drawCross(origin, cellSize, colors.onSurface.copy(alpha = 0.75f))
@@ -165,12 +167,13 @@ private fun GridCanvas(
                     )
                 }
                 CellMark.CROWN -> {
-                    val iconSize = cellSize.minDimension * 0.7f
+                    val iconSize = cellSize.minDimension * 0.78f
+                    val painter = if (isFlagged) flaggedCrownPainter else crownPainter
                     translate(
                         left = origin.x + (cellSize.width - iconSize) / 2f,
                         top = origin.y + (cellSize.height - iconSize) / 2f
                     ) {
-                        with(crownPainter) { draw(Size(iconSize, iconSize), colorFilter = ColorFilter.tint(markColor)) }
+                        with(painter) { draw(Size(iconSize, iconSize)) }
                     }
                 }
             }

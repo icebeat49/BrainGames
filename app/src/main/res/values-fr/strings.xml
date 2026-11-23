@@ -85,41 +85,41 @@
     <string name="action_clear_all">Tout effacer</string>
     <string name="action_cancel">Annuler</string>
 
-    <!-- Animaux cachés -->
-    <string name="home_play_crowns">Animaux cachés</string>
-    <string name="home_desc_crowns">Un animal par ligne, colonne et région, sans que deux animaux se touchent</string>
+    <!-- Couronnes -->
+    <string name="home_play_crowns">Couronnes</string>
+    <string name="home_desc_crowns">Une couronne par ligne, colonne et région, sans que deux couronnes se touchent</string>
     <string name="crowns_mode_classic_description">Règles enfreintes signalées, indices disponibles et victoire automatique.</string>
-    <string name="crowns_mode_hardcore_description">Aucune aide. Vérifiez votre grille une fois tous les animaux placés.</string>
+    <string name="crowns_mode_hardcore_description">Aucune aide. Vérifiez votre grille une fois toutes les couronnes placées.</string>
     <string name="crowns_mark_with">Marque : %1$s</string>
-    <string name="crowns_gesture_help">Toucher : marquer · Double toucher : animal · Glisser : marquer plusieurs cases</string>
+    <string name="crowns_gesture_help">Toucher : marquer · Double toucher : couronne · Glisser : marquer plusieurs cases</string>
     <string name="crowns_clear_title">Effacer la grille ?</string>
-    <string name="crowns_clear_message">Tous les animaux et toutes les marques seront retirés. Vous pourrez annuler.</string>
+    <string name="crowns_clear_message">Toutes les couronnes et toutes les marques seront retirées. Vous pourrez annuler.</string>
 
-    <!-- Animaux cachés : accessibilité -->
+    <!-- Couronnes : accessibilité -->
     <string name="crowns_cell_description">Ligne %1$d, colonne %2$d, région %3$d : %4$s</string>
     <string name="crowns_mark_empty">vide</string>
     <string name="crowns_mark_cross">barrée</string>
     <string name="crowns_mark_question">point d\'interrogation</string>
-    <string name="crowns_mark_crown">animal</string>
+    <string name="crowns_mark_crown">couronne</string>
     <string name="crowns_cell_conflict">, enfreint une règle</string>
     <string name="crowns_cell_wrong">, erronée</string>
     <string name="crowns_action_mark">Marquer</string>
-    <string name="crowns_action_place">Placer un animal</string>
+    <string name="crowns_action_place">Placer une couronne</string>
 
-    <!-- Animaux cachés : indices. Lignes et colonnes numérotées à partir de 1. -->
-    <string name="crowns_hint_wrong_crown">Cet animal n\'est pas à la bonne place.</string>
-    <string name="crowns_hint_wrong_cross">Un animal se trouve sur cette case barrée.</string>
-    <string name="crowns_hint_reveal">Un animal va ici.</string>
-    <string name="crowns_hint_single_row">La ligne %1$d n\'a plus qu\'une case libre : l\'animal y va.</string>
-    <string name="crowns_hint_single_column">La colonne %1$d n\'a plus qu\'une case libre : l\'animal y va.</string>
-    <string name="crowns_hint_single_region">La région en surbrillance n\'a plus qu\'une case libre : l\'animal y va.</string>
+    <!-- Couronnes : indices. Lignes et colonnes numérotées à partir de 1. -->
+    <string name="crowns_hint_wrong_crown">Cette couronne n\'est pas à la bonne place.</string>
+    <string name="crowns_hint_wrong_cross">Une couronne se trouve sur cette case barrée.</string>
+    <string name="crowns_hint_reveal">Une couronne va ici.</string>
+    <string name="crowns_hint_single_row">La ligne %1$d n\'a plus qu\'une case libre : la couronne y va.</string>
+    <string name="crowns_hint_single_column">La colonne %1$d n\'a plus qu\'une case libre : la couronne y va.</string>
+    <string name="crowns_hint_single_region">La région en surbrillance n\'a plus qu\'une case libre : la couronne y va.</string>
     <string name="crowns_hint_confined_region_row">La région en surbrillance tient seulement dans la ligne %1$d : le reste de la ligne %1$d est vide.</string>
     <string name="crowns_hint_confined_region_column">La région en surbrillance tient seulement dans la colonne %1$d : le reste de la colonne %1$d est vide.</string>
     <string name="crowns_hint_confined_row_region">La ligne %1$d tient seulement dans la région en surbrillance : le reste de cette région est vide.</string>
     <string name="crowns_hint_confined_column_region">La colonne %1$d tient seulement dans la région en surbrillance : le reste de cette région est vide.</string>
-    <string name="crowns_hint_neighbour_row">Un animal sur les cases marquées ne laisserait aucune case libre à la ligne %1$d.</string>
-    <string name="crowns_hint_neighbour_column">Un animal sur les cases marquées ne laisserait aucune case libre à la colonne %1$d.</string>
-    <string name="crowns_hint_neighbour_region">Un animal sur les cases marquées ne laisserait aucune case libre à la région en surbrillance.</string>
+    <string name="crowns_hint_neighbour_row">Une couronne sur les cases marquées ne laisserait aucune case libre à la ligne %1$d.</string>
+    <string name="crowns_hint_neighbour_column">Une couronne sur les cases marquées ne laisserait aucune case libre à la colonne %1$d.</string>
+    <string name="crowns_hint_neighbour_region">Une couronne sur les cases marquées ne laisserait aucune case libre à la région en surbrillance.</string>
     <string name="crowns_hint_group_regions_rows">Ces %1$d régions tiennent seulement dans les lignes %2$s : ces lignes sont vides partout ailleurs.</string>
     <string name="crowns_hint_group_regions_columns">Ces %1$d régions tiennent seulement dans les colonnes %2$s : ces colonnes sont vides partout ailleurs.</string>
     <string name="crowns_hint_group_rows_regions">Les lignes %2$s tiennent seulement dans ces %1$d régions : le reste de ces régions est vide.</string>

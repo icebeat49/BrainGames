@@ -11,7 +11,12 @@ import androidx.compose.ui.graphics.Color
  * Regions also get thick borders, so colour is never the only cue.
  */
 @Immutable
-data class RegionPalette(val fills: List<Color>) {
+data class RegionPalette(
+    val fills: List<Color>,
+    /** Pieces drawn on the regions (e.g. crowns): a fill and an outline chosen to contrast with every fill. */
+    val pieceFill: Color,
+    val pieceOutline: Color
+) {
     fun fillFor(region: Int): Color = fills[region % fills.size]
 }
 
@@ -27,7 +32,10 @@ val LightRegionPalette = RegionPalette(
         Color(0xFFAAAA00), // olive
         Color(0xFFDDDDDD), // pale grey
         Color(0xFFCCBBEE), // lavender
-    )
+    ),
+    // Light fills: a very dark piece with a white rim.
+    pieceFill = Color(0xFF231C3A),
+    pieceOutline = Color(0xFFFFFFFF)
 )
 
 val DarkRegionPalette = RegionPalette(
@@ -42,7 +50,10 @@ val DarkRegionPalette = RegionPalette(
         Color(0xFF6B5200),
         Color(0xFF555555),
         Color(0xFF54467A),
-    )
+    ),
+    // Dark fills: a bright gold piece with a near-black rim.
+    pieceFill = Color(0xFFFFD54F),
+    pieceOutline = Color(0xFF141414)
 )
 
 val LocalRegionPalette = staticCompositionLocalOf { LightRegionPalette }

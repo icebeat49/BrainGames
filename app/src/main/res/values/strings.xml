@@ -84,41 +84,41 @@
     <string name="action_clear_all">Clear all</string>
     <string name="action_cancel">Cancel</string>
 
-    <!-- Hidden Animals -->
-    <string name="home_play_crowns">Hidden Animals</string>
-    <string name="home_desc_crowns">One animal per row, column and region, and no two may touch</string>
+    <!-- Crowns -->
+    <string name="home_play_crowns">Crowns</string>
+    <string name="home_desc_crowns">One crown per row, column and region, and no two may touch</string>
     <string name="crowns_mode_classic_description">Broken rules are shown, hints are available and the win is automatic.</string>
-    <string name="crowns_mode_hardcore_description">No help at all. Check your grid once every animal is placed.</string>
+    <string name="crowns_mode_hardcore_description">No help at all. Check your grid once every crown is placed.</string>
     <string name="crowns_mark_with">Mark: %1$s</string>
-    <string name="crowns_gesture_help">Tap: mark · Double tap: animal · Drag: mark several cells</string>
+    <string name="crowns_gesture_help">Tap: mark · Double tap: crown · Drag: mark several cells</string>
     <string name="crowns_clear_title">Clear the grid?</string>
-    <string name="crowns_clear_message">Every animal and mark will be removed. You can undo this.</string>
+    <string name="crowns_clear_message">Every crown and mark will be removed. You can undo this.</string>
 
-    <!-- Hidden Animals: accessibility -->
+    <!-- Crowns: accessibility -->
     <string name="crowns_cell_description">Row %1$d, column %2$d, region %3$d: %4$s</string>
     <string name="crowns_mark_empty">empty</string>
     <string name="crowns_mark_cross">crossed out</string>
     <string name="crowns_mark_question">question mark</string>
-    <string name="crowns_mark_crown">animal</string>
+    <string name="crowns_mark_crown">crown</string>
     <string name="crowns_cell_conflict">, breaks a rule</string>
     <string name="crowns_cell_wrong">, wrong</string>
     <string name="crowns_action_mark">Mark</string>
-    <string name="crowns_action_place">Place an animal</string>
+    <string name="crowns_action_place">Place a crown</string>
 
-    <!-- Hidden Animals: hints. Rows and columns are numbered from 1. -->
-    <string name="crowns_hint_wrong_crown">This animal is in the wrong place.</string>
-    <string name="crowns_hint_wrong_cross">An animal belongs on this crossed-out cell.</string>
-    <string name="crowns_hint_reveal">An animal goes here.</string>
-    <string name="crowns_hint_single_row">Row %1$d has only one free cell left: the animal goes there.</string>
-    <string name="crowns_hint_single_column">Column %1$d has only one free cell left: the animal goes there.</string>
-    <string name="crowns_hint_single_region">The highlighted region has only one free cell left: the animal goes there.</string>
+    <!-- Crowns: hints. Rows and columns are numbered from 1. -->
+    <string name="crowns_hint_wrong_crown">This crown is in the wrong place.</string>
+    <string name="crowns_hint_wrong_cross">A crown belongs on this crossed-out cell.</string>
+    <string name="crowns_hint_reveal">A crown goes here.</string>
+    <string name="crowns_hint_single_row">Row %1$d has only one free cell left: the crown goes there.</string>
+    <string name="crowns_hint_single_column">Column %1$d has only one free cell left: the crown goes there.</string>
+    <string name="crowns_hint_single_region">The highlighted region has only one free cell left: the crown goes there.</string>
     <string name="crowns_hint_confined_region_row">The highlighted region fits only in row %1$d, so the rest of row %1$d is empty.</string>
     <string name="crowns_hint_confined_region_column">The highlighted region fits only in column %1$d, so the rest of column %1$d is empty.</string>
     <string name="crowns_hint_confined_row_region">Row %1$d fits only in the highlighted region, so the rest of that region is empty.</string>
     <string name="crowns_hint_confined_column_region">Column %1$d fits only in the highlighted region, so the rest of that region is empty.</string>
-    <string name="crowns_hint_neighbour_row">An animal on the marked cells would leave row %1$d with no free cell.</string>
-    <string name="crowns_hint_neighbour_column">An animal on the marked cells would leave column %1$d with no free cell.</string>
-    <string name="crowns_hint_neighbour_region">An animal on the marked cells would leave the highlighted region with no free cell.</string>
+    <string name="crowns_hint_neighbour_row">A crown on the marked cells would leave row %1$d with no free cell.</string>
+    <string name="crowns_hint_neighbour_column">A crown on the marked cells would leave column %1$d with no free cell.</string>
+    <string name="crowns_hint_neighbour_region">A crown on the marked cells would leave the highlighted region with no free cell.</string>
     <string name="crowns_hint_group_regions_rows">These %1$d regions fit only in rows %2$s, so those rows are empty everywhere else.</string>
     <string name="crowns_hint_group_regions_columns">These %1$d regions fit only in columns %2$s, so those columns are empty everywhere else.</string>
     <string name="crowns_hint_group_rows_regions">Rows %2$s fit only in these %1$d regions, so the rest of those regions is empty.</string>
