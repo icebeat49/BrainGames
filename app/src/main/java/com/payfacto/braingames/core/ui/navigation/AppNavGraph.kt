@@ -1,11 +1,14 @@
 package com.payfacto.braingames.core.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.payfacto.braingames.core.config.FeatureFlags
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.feature.home.HomeScreen
@@ -46,18 +49,20 @@ fun AppNavGraph(
         ) { backStack ->
             val gameTypeStr = backStack.arguments?.getString(Screen.ARG_GAME_TYPE) ?: GameType.SUDOKU.name
             val gameType = runCatching { GameType.valueOf(gameTypeStr) }.getOrDefault(GameType.SUDOKU)
-            DifficultyPickerScreen(
-                gameType = gameType,
-                onDifficultySelected = { difficulty ->
-                    val route = when (gameType) {
-                        GameType.SUDOKU      -> Screen.Sudoku.createRoute(difficulty.name)
-                        GameType.KAKURO      -> Screen.Kakuro.createRoute(difficulty.name)
-                        GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name)
-                    }
-                    navController.navigate(route)
-                },
-                onBack = { navController.popBackStack() }
-            )
+            IfGameEnabled(gameType, backStack, navController) {
+                DifficultyPickerScreen(
+                    gameType = gameType,
+                    onDifficultySelected = { difficulty ->
+                        val route = when (gameType) {
+                            GameType.SUDOKU      -> Screen.Sudoku.createRoute(difficulty.name)
+                            GameType.KAKURO      -> Screen.Kakuro.createRoute(difficulty.name)
+                            GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name)
+                        }
+                        navController.navigate(route)
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         // Game screens: the difficulty argument reaches each ViewModel through its
@@ -82,14 +87,37 @@ fun AppNavGraph(
             )
         }
 
+        // Registered even when Word Search is hidden, so the code stays compiled and can be re-enabled.
         composable(
             route = Screen.WordSearch.route,
             arguments = listOf(difficultyArgument())
-        ) {
-            WordSearchScreen(
-                soundManager = soundManager,
-                onBack = { navController.popBackStack() }
-            )
+        ) { backStack ->
+            IfGameEnabled(GameType.WORD_SEARCH, backStack, navController) {
+                WordSearchScreen(
+                    soundManager = soundManager,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Shows [content] only when [game] is enabled. Otherwise renders nothing and pops
+ * [entry] off the back stack, provided it is still the current destination.
+ */
+@Composable
+private fun IfGameEnabled(
+    game: GameType,
+    entry: NavBackStackEntry,
+    navController: NavHostController,
+    content: @Composable () -> Unit
+) {
+    if (FeatureFlags.isEnabled(game)) {
+        content()
+    } else {
+        LaunchedEffect(entry) {
+            if (navController.currentBackStackEntry?.id == entry.id) navController.popBackStack()
         }
     }
 }

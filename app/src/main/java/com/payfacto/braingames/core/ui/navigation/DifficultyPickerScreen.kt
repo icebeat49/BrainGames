@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.payfacto.braingames.R
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameType
+import com.payfacto.braingames.core.ui.GameCatalog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,11 +34,7 @@ fun DifficultyPickerScreen(
     onDifficultySelected: (Difficulty) -> Unit,
     onBack: () -> Unit
 ) {
-    val titleRes = when (gameType) {
-        GameType.SUDOKU      -> R.string.home_play_sudoku
-        GameType.KAKURO      -> R.string.home_play_kakuro
-        GameType.WORD_SEARCH -> R.string.home_play_wordsearch
-    }
+    val titleRes = GameCatalog.infoFor(gameType).titleRes
 
     Scaffold(
         topBar = {

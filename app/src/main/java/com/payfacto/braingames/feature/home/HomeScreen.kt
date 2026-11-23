@@ -9,9 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,7 +28,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.payfacto.braingames.R
+import com.payfacto.braingames.core.config.FeatureFlags
 import com.payfacto.braingames.core.model.GameType
+import com.payfacto.braingames.core.ui.GameCatalog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,26 +70,16 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            GameCard(
-                title = stringResource(R.string.home_play_sudoku),
-                description = stringResource(R.string.home_desc_sudoku),
-                icon = Icons.Default.GridOn,
-                onClick = { onGameSelected(GameType.SUDOKU) }
-            )
-            Spacer(Modifier.height(16.dp))
-            GameCard(
-                title = stringResource(R.string.home_play_kakuro),
-                description = stringResource(R.string.home_desc_kakuro),
-                icon = Icons.Default.Extension,
-                onClick = { onGameSelected(GameType.KAKURO) }
-            )
-            Spacer(Modifier.height(16.dp))
-            GameCard(
-                title = stringResource(R.string.home_play_wordsearch),
-                description = stringResource(R.string.home_desc_wordsearch),
-                icon = Icons.Default.Search,
-                onClick = { onGameSelected(GameType.WORD_SEARCH) }
-            )
+            GameType.entries.filter(FeatureFlags::isEnabled).forEachIndexed { index, game ->
+                if (index > 0) Spacer(Modifier.height(16.dp))
+                val info = GameCatalog.infoFor(game)
+                GameCard(
+                    title = stringResource(info.titleRes),
+                    description = stringResource(info.descriptionRes),
+                    icon = info.icon,
+                    onClick = { onGameSelected(game) }
+                )
+            }
         }
     }
 }

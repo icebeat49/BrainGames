@@ -20,9 +20,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Hidden games stay reachable during development.
+            buildConfigField("boolean", "FEATURE_WORD_SEARCH", "true")
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            buildConfigField("boolean", "FEATURE_WORD_SEARCH", "false")
         }
     }
     compileOptions {
@@ -31,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
