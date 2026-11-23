@@ -20,11 +20,7 @@ class CandidateGrid private constructor(
     fun isCandidate(cell: Int): Boolean = candidates[cell]
     fun hasAnimal(cell: Int): Boolean = animals[cell]
 
-    fun cellsOf(area: Area): List<Int> = when (area.type) {
-        AreaType.ROW -> puzzle.rowCells[area.index]
-        AreaType.COLUMN -> puzzle.columnCells[area.index]
-        AreaType.REGION -> puzzle.regionCells[area.index]
-    }
+    fun cellsOf(area: Area): List<Int> = puzzle.cellsOf(area)
 
     fun candidatesOf(area: Area): List<Int> = cellsOf(area).filter { candidates[it] }
     fun hasAnimalIn(area: Area): Boolean = cellsOf(area).any { animals[it] }

@@ -1,5 +1,7 @@
 package com.payfacto.braingames.feature.animals.engine
 
+import com.payfacto.braingames.feature.animals.model.AnimalsPuzzle
+
 /** Deduction techniques, from easiest to hardest. The ordinal is the difficulty. */
 enum class Technique {
     /** A row, column or region has a single possible cell: the animal goes there. */
@@ -30,6 +32,12 @@ enum class AreaType { ROW, COLUMN, REGION }
 
 /** A row, column or region, by index. */
 data class Area(val type: AreaType, val index: Int)
+
+fun AnimalsPuzzle.cellsOf(area: Area): List<Int> = when (area.type) {
+    AreaType.ROW -> rowCells[area.index]
+    AreaType.COLUMN -> columnCells[area.index]
+    AreaType.REGION -> regionCells[area.index]
+}
 
 /**
  * One deduction, as data for hints. The UI turns it into a localized sentence.
