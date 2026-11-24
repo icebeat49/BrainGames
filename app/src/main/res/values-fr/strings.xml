@@ -86,7 +86,7 @@
 
     <!-- Couronnes -->
     <string name="home_play_crowns">Couronnes</string>
-    <string name="home_desc_crowns">Une couronne par ligne, colonne et région, sans que deux couronnes se touchent</string>
+    <string name="home_desc_crowns">Placez une couronne dans chaque ligne, colonne et région de couleur, sans que deux couronnes se touchent.</string>
     <string name="crowns_mode_classic_description">Règles enfreintes signalées, indices disponibles et victoire automatique.</string>
     <string name="crowns_mode_hardcore_description">Aucune aide. Vérifiez votre grille une fois toutes les couronnes placées.</string>
     <string name="crowns_mark_with">Marque : %1$s</string>

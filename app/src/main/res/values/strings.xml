@@ -85,7 +85,7 @@
 
     <!-- Crowns -->
     <string name="home_play_crowns">Crowns</string>
-    <string name="home_desc_crowns">One crown per row, column and region, and no two may touch</string>
+    <string name="home_desc_crowns">Place one crown in every row, column and colour region, with no two crowns touching.</string>
     <string name="crowns_mode_classic_description">Broken rules are shown, hints are available and the win is automatic.</string>
     <string name="crowns_mode_hardcore_description">No help at all. Check your grid once every crown is placed.</string>
     <string name="crowns_mark_with">Mark: %1$s</string>
