@@ -10,6 +10,7 @@ import com.payfacto.braingames.core.model.FailedCheck
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.motion.MotionSettings
 import com.payfacto.braingames.core.session.GameSession
+import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.grid.GridPoint
 import com.payfacto.braingames.core.ui.navigation.Screen
@@ -28,7 +29,10 @@ import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
 import com.payfacto.braingames.feature.crowns.model.CellMark
 import com.payfacto.braingames.feature.crowns.ui.CrownsAnimations
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -108,6 +112,14 @@ class CrownsViewModel @Inject constructor(
     val state: StateFlow<CrownsUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
 
+    private val _sounds = Channel<SoundEvent>(Channel.BUFFERED)
+
+    /**
+     * Sounds for board actions, for the screen to play. Hardcore never gets a sound that
+     * tells right from wrong: a crown always sounds the same, and there is no conflict sound.
+     */
+    val sounds: Flow<SoundEvent> = _sounds.receiveAsFlow()
+
     init {
         val puzzle = CrownsGameSaver.restorePuzzle(savedStateHandle)
         if (puzzle == null) {
@@ -177,7 +189,8 @@ class CrownsViewModel @Inject constructor(
     fun setMark(cell: Int, mark: CellMark) {
         val state = _state.value
         if (!state.isPlayable) return
-        applyChange(state.board.withMark(cell, mark), recordUndo = true)
+        val before = state.board
+        if (applyChange(before.withMark(cell, mark), recordUndo = true)) play(soundForEdit(before))
     }
 
     fun toggleQuestionMode() {
@@ -190,7 +203,7 @@ class CrownsViewModel @Inject constructor(
 
     fun undo() {
         val previous = undoStack.pop() ?: return
-        applyChange(previous, recordUndo = false)
+        if (applyChange(previous, recordUndo = false)) play(SoundEvent.TAP)
     }
 
     /** Removes every X and ? and keeps the crowns, as one undoable step. No confirmation. */
@@ -198,14 +211,14 @@ class CrownsViewModel @Inject constructor(
         val state = _state.value
         if (!state.isPlayable) return
         val marked = state.board.cellsWith(CellMark.CROSS) + state.board.cellsWith(CellMark.QUESTION)
-        applyChange(state.board.withMarks(marked, CellMark.EMPTY), recordUndo = true)
+        if (applyChange(state.board.withMarks(marked, CellMark.EMPTY), recordUndo = true)) play(SoundEvent.TAP)
     }
 
     /** Removes every mark, as one undoable step. */
     fun clearAll() {
         val state = _state.value
         if (!state.isPlayable) return
-        applyChange(CrownsBoard.empty(state.board.size), recordUndo = true)
+        if (applyChange(CrownsBoard.empty(state.board.size), recordUndo = true)) play(SoundEvent.TAP)
     }
 
     /**
@@ -227,6 +240,7 @@ class CrownsViewModel @Inject constructor(
             is CrownsHint.Reveal -> board.withMark(hint.cell, CellMark.CROWN)
         }
         gameSession.consumeHint()
+        play(SoundEvent.HINT)
         applyChange(hinted, recordUndo = true)
         _state.update { it.copy(hint = displayOf(puzzle, hint)) }
         return true
@@ -251,6 +265,7 @@ class CrownsViewModel @Inject constructor(
             return CheckResult.Solved
         }
         _state.update { it.copy(failedCheck = FailedCheck(wrongCells)) }
+        play(SoundEvent.CHECK_FAILED)
         return CheckResult.Incorrect(wrongCells)
     }
 
@@ -277,22 +292,47 @@ class CrownsViewModel @Inject constructor(
 
     // ── Board changes ───────────────────────────────────────────────────────
 
+    /**
+     * One sound per gesture: on its first change, not on every cell of a drag. A double tap
+     * continues its first tap's step but still sounds, as it turns the X into a crown.
+     */
     private fun applyEdit(edit: BoardEdit?) {
         if (edit == null) return
         val board = _state.value.board
         val edited = edit.changes.entries.fold(board) { current, (cell, mark) -> current.withMark(cell, mark) }
-        applyChange(edited, recordUndo = !edit.continuesPrevious)
+        val addsCrown = (edited.crowns - board.crowns).isNotEmpty()
+        if (applyChange(edited, recordUndo = !edit.continuesPrevious) && (!edit.continuesPrevious || addsCrown)) {
+            play(soundForEdit(board))
+        }
+    }
+
+    /** The sound for a player's edit from [before] to the current board. */
+    private fun soundForEdit(before: CrownsBoard): SoundEvent {
+        val state = _state.value
+        val newCrowns = state.board.crowns - before.crowns
+        return when {
+            newCrowns.isEmpty() -> SoundEvent.TAP
+            isClassic && newCrowns.any { it in state.conflictCells } -> SoundEvent.CONFLICT
+            else -> SoundEvent.CROWN_PLACED
+        }
+    }
+
+    /** Once the grid is solved, the win sound is the last one: the final crown's own sound is dropped. */
+    private fun play(sound: SoundEvent) {
+        if (_state.value.isSolved && sound != SoundEvent.WIN) return
+        _sounds.trySend(sound)
     }
 
     /**
      * The one path for every board change: undo, save, Classic conflicts and win,
      * clearing the hint highlight and, when one of them changed, the revealed errors.
+     * Returns whether the board changed.
      */
-    private fun applyChange(newBoard: CrownsBoard, recordUndo: Boolean) {
+    private fun applyChange(newBoard: CrownsBoard, recordUndo: Boolean): Boolean {
         val state = _state.value
-        val puzzle = state.puzzle ?: return
+        val puzzle = state.puzzle ?: return false
         val oldBoard = state.board
-        if (newBoard == oldBoard) return
+        if (newBoard == oldBoard) return false
         if (recordUndo) undoStack.push(oldBoard)
 
         CrownsGameSaver.saveBoard(savedStateHandle, newBoard)
@@ -309,11 +349,13 @@ class CrownsViewModel @Inject constructor(
             )
         }
         if (isClassic && CrownsValidator.isSolved(puzzle, newBoard)) win()
+        return true
     }
 
     /** Locks the board for its short win highlight, then shows the win screen. */
     private fun win() {
         _state.update { it.copy(isSolved = true) }
+        play(SoundEvent.WIN)
         gameSession.complete(winDelay = if (motionSettings.animationsEnabled()) WIN_HIGHLIGHT else Duration.ZERO)
     }
 

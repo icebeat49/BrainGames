@@ -31,14 +31,33 @@ class SoundManager @Inject constructor(
     var isMuted: Boolean = false
 
     init {
-        soundIds[SoundEvent.TAP]     = soundPool.load(context, R.raw.sound_tap, 1)
-        soundIds[SoundEvent.CORRECT] = soundPool.load(context, R.raw.sound_correct, 1)
-        soundIds[SoundEvent.ERROR]   = soundPool.load(context, R.raw.sound_error, 1)
-        soundIds[SoundEvent.WIN]     = soundPool.load(context, R.raw.sound_win, 1)
+        val loaded = mutableMapOf<Int, Int>()
+        SoundEvent.entries.forEach { event ->
+            val resource = resourceFor(event)
+            soundIds[event] = loaded.getOrPut(resource) { soundPool.load(context, resource, 1) }
+        }
     }
 
     fun play(event: SoundEvent) {
         if (isMuted) return
         soundIds[event]?.let { soundPool.play(it, 1f, 1f, 1, 0, 1f) }
+    }
+
+    private companion object {
+        /**
+         * Sound file per event. Events without a file of their own yet share the closest one:
+         * add res/raw/sound_crown.ogg, sound_conflict.ogg, sound_hint.ogg and
+         * sound_check_failed.ogg, then point their events at them here.
+         */
+        fun resourceFor(event: SoundEvent): Int = when (event) {
+            SoundEvent.TAP -> R.raw.sound_tap
+            SoundEvent.CORRECT -> R.raw.sound_correct
+            SoundEvent.ERROR -> R.raw.sound_error
+            SoundEvent.WIN -> R.raw.sound_win
+            SoundEvent.CROWN_PLACED -> R.raw.sound_tap
+            SoundEvent.CONFLICT -> R.raw.sound_error
+            SoundEvent.HINT -> R.raw.sound_correct
+            SoundEvent.CHECK_FAILED -> R.raw.sound_error
+        }
     }
 }

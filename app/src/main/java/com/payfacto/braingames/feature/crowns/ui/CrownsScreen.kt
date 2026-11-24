@@ -54,7 +54,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
-import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.motion.rememberAnimationsEnabled
 import com.payfacto.braingames.core.sound.SoundEvent
@@ -80,8 +79,9 @@ fun CrownsScreen(
         onStopOrDispose { viewModel.onScreenHidden() }
     }
 
-    LaunchedEffect(session.showWin) {
-        if (session.showWin) soundManager.play(SoundEvent.WIN)
+    // The ViewModel picks every board sound (win included, played once as the board glows).
+    LaunchedEffect(viewModel) {
+        viewModel.sounds.collect(soundManager::play)
     }
 
     // Brief glow of the whole board on a win, before the win screen (which waits for it).
@@ -104,7 +104,7 @@ fun CrownsScreen(
                 isMuted = session.isMuted,
                 onBack = onBack,
                 onHint = if (isClassic) {
-                    { if (viewModel.useHint()) soundManager.play(SoundEvent.CORRECT) }
+                    { viewModel.useHint() }
                 } else null,
                 onNewPuzzle = {
                     soundManager.play(SoundEvent.TAP)
@@ -184,24 +184,16 @@ fun CrownsScreen(
                 canUndo = state.canUndo,
                 hasMarks = state.hasMarks,
                 isQuestionMode = state.isQuestionMode,
-                onUndo = {
-                    viewModel.undo()
-                    soundManager.play(SoundEvent.TAP)
-                },
+                onUndo = viewModel::undo,
                 onToggleQuestionMode = viewModel::toggleQuestionMode,
-                onClearMarks = {
-                    viewModel.clearMarks()
-                    soundManager.play(SoundEvent.TAP)
-                },
+                onClearMarks = viewModel::clearMarks,
                 onClearAll = { confirmClear = true }
             )
 
             if (!isClassic) {
                 Spacer(Modifier.height(12.dp))
                 Button(
-                    onClick = {
-                        if (viewModel.checkSolution() is CheckResult.Incorrect) soundManager.play(SoundEvent.ERROR)
-                    },
+                    onClick = { viewModel.checkSolution() },
                     enabled = state.canCheck,
                     modifier = Modifier.fillMaxWidth()
                 ) {

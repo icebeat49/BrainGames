@@ -6,6 +6,7 @@ import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.motion.MotionSettings
 import com.payfacto.braingames.core.session.GameSession
+import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.ui.grid.GridPoint
 import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.crowns.CrownsTestGrids.uniqueFiveByFive
@@ -19,7 +20,9 @@ import com.payfacto.braingames.feature.crowns.model.CellMark
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.fakePreferencesRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -455,6 +458,118 @@ class CrownsViewModelTest {
 
         assertFalse(viewModel.state.value.canUndo)
         assertEquals(emptyBoard, viewModel.state.value.board)
+    }
+
+    // ── Sounds ──────────────────────────────────────────────────────────────
+
+    /** Sounds played from now on; sounds sent before (buffered) are dropped. */
+    private fun TestScope.soundsOf(viewModel: CrownsViewModel): MutableList<SoundEvent> {
+        val sounds = mutableListOf<SoundEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.sounds.collect { sounds += it } }
+        sounds.clear()
+        return sounds
+    }
+
+    @Test
+    fun `a mark taps and a crown has its own sound`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        val sounds = soundsOf(viewModel)
+
+        viewModel.placeCrown(cell(0, 0))
+
+        assertEquals(listOf(SoundEvent.TAP, SoundEvent.CROWN_PLACED), sounds)
+    }
+
+    @Test
+    fun `a drag plays one sound, not one per cell`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        val sounds = soundsOf(viewModel)
+
+        viewModel.onDragStart(GridPoint(4.5f, 0.5f))
+        viewModel.onDragMove(GridPoint(4.5f, 4.5f))
+        viewModel.onDragEnd()
+
+        assertEquals(listOf(SoundEvent.TAP), sounds)
+    }
+
+    @Test
+    fun `classic plays the conflict sound for a crown that breaks a rule`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.placeCrown(cell(0, 1))
+        val sounds = soundsOf(viewModel)
+
+        viewModel.placeCrown(cell(0, 2))
+
+        assertEquals(SoundEvent.CONFLICT, sounds.last())
+    }
+
+    @Test
+    fun `hardcore never plays a sound that reveals right or wrong`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = hardcore()
+        val sounds = soundsOf(viewModel)
+
+        viewModel.placeCrown(cell(0, 1))
+        viewModel.placeCrown(cell(0, 2))
+        val wrongCrown = puzzle.cellCount - 1
+        viewModel.placeCrown(wrongCrown)
+
+        assertEquals(
+            listOf(
+                SoundEvent.TAP, SoundEvent.CROWN_PLACED,
+                SoundEvent.TAP, SoundEvent.CROWN_PLACED,
+                SoundEvent.TAP, SoundEvent.CROWN_PLACED
+            ),
+            sounds
+        )
+    }
+
+    @Test
+    fun `a failed check plays its sound`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = hardcore()
+        val sounds = soundsOf(viewModel)
+
+        viewModel.checkSolution()
+
+        assertEquals(listOf(SoundEvent.CHECK_FAILED), sounds)
+    }
+
+    @Test
+    fun `a hint plays the hint sound`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        val sounds = soundsOf(viewModel)
+
+        viewModel.useHint()
+
+        assertEquals(listOf(SoundEvent.HINT), sounds)
+    }
+
+    @Test
+    fun `the win sound plays once, when the grid is solved`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        val sounds = soundsOf(viewModel)
+
+        viewModel.placeAll(puzzle.solutionCells)
+
+        assertEquals(1, sounds.count { it == SoundEvent.WIN })
+        assertEquals(SoundEvent.WIN, sounds.last())
+    }
+
+    @Test
+    fun `undo and the clear buttons tap`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.tap(cell(2, 2))
+        viewModel.placeCrown(cell(0, 0))
+        val sounds = soundsOf(viewModel)
+
+        viewModel.undo()
+        val afterUndo = sounds.toList()
+        viewModel.placeCrown(cell(0, 0))
+        sounds.clear()
+        viewModel.clearMarks()
+        viewModel.clearAll()
+
+        assertEquals(listOf(SoundEvent.TAP), afterUndo)
+        assertEquals(listOf(SoundEvent.TAP, SoundEvent.TAP), sounds)
     }
 
     // ── Saved state ─────────────────────────────────────────────────────────
