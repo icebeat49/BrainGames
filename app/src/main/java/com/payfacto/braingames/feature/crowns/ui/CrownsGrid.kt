@@ -90,6 +90,9 @@ fun CrownsGrid(
                         val change = event.changes.firstOrNull { it.id == down.id }
                         if (change == null || !change.pressed) {
                             if (dragging) {
+                                // The release can be past the last move sample on a fast swipe:
+                                // cover that last stretch before ending the drag.
+                                change?.let { currentInput.onDragMove(geometry.toGridPoint(it.position.x, it.position.y)) }
                                 currentInput.onDragEnd()
                             } else if (change != null) {
                                 currentInput.onTap(
@@ -161,7 +164,8 @@ private fun GridCanvas(
                 CellMark.EMPTY -> Unit
                 CellMark.CROSS -> drawCross(origin, cellSize, colors.onSurface.copy(alpha = 0.75f))
                 CellMark.QUESTION -> {
-                    val layout = textMeasurer.measure("?", questionStyle.copy(fontSize = (cellSize.height * 0.45f).toSp()))
+                    // 60% of the cell: still clearly readable on ~27dp cells (11×11 on a small phone).
+                    val layout = textMeasurer.measure("?", questionStyle.copy(fontSize = (cellSize.height * 0.6f).toSp()))
                     drawText(
                         layout,
                         topLeft = origin + Offset(

@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -95,7 +100,9 @@ fun CrownsScreen(
     ) { padding ->
       BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
         // Square grid that also fits in landscape; the column scrolls for the controls.
-        val gridSide = min(maxWidth - 24.dp, maxHeight * 0.7f)
+        // The grid keeps clear of the system back-gesture zones: a drag starting in the first
+        // or last column would otherwise leave the game on phones with gesture navigation.
+        val gridSide = min(maxWidth - gridSideMargin() * 2, maxHeight * 0.7f)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -245,6 +252,21 @@ fun CrownsScreen(
             }
         )
     }
+}
+
+/**
+ * Space to leave on each side of the grid: the wider of the system gesture inset (zero with
+ * 3-button navigation) and the screen's normal 12dp margin.
+ */
+@Composable
+private fun gridSideMargin(): Dp {
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val gestures = WindowInsets.systemGestures
+    val gestureInset = with(density) {
+        maxOf(gestures.getLeft(this, layoutDirection), gestures.getRight(this, layoutDirection)).toDp()
+    }
+    return maxOf(gestureInset, 12.dp)
 }
 
 /** Undo · ✕/? toggle · Clear marks · Clear all. Icon buttons keep the row within a 360dp phone. */
