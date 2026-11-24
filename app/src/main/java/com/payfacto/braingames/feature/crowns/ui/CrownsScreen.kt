@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import com.payfacto.braingames.feature.crowns.CrownsUiState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -49,7 +51,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.min
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -116,28 +117,10 @@ fun CrownsScreen(
         }
     ) { padding ->
       BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
-        // Square grid that also fits in landscape; the column scrolls for the controls.
         // The grid keeps clear of the system back-gesture zones: a drag starting in the first
         // or last column would otherwise leave the game on phones with gesture navigation.
-        val gridSide = min(maxWidth - gridSideMargin() * 2, maxHeight * 0.7f)
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = if (isClassic) {
-                    stringResource(R.string.hints_remaining, session.hintsRemaining)
-                } else {
-                    stringResource(R.string.mode_hardcore_label)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
-
+        val sideMargin = gridSideMargin()
+        val board: @Composable (Dp) -> Unit = { side ->
             val puzzle = state.puzzle
             if (puzzle != null && puzzle.size == state.board.size) {
                 CrownsGrid(
@@ -157,58 +140,78 @@ fun CrownsScreen(
                         onDragEnd = viewModel::onDragEnd,
                         onSetMark = viewModel::setMark
                     ),
-                    modifier = Modifier.size(gridSide),
+                    modifier = Modifier.size(side),
                     winGlow = { winGlow.value }
                 )
+            } else {
+                Spacer(Modifier.size(side))
             }
-
-            state.hint?.let { hint ->
-                Spacer(Modifier.height(8.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = viewModel::dismissHint)
-                ) {
-                    Text(
-                        text = crownsHintMessage(hint.hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-            Controls(
-                canUndo = state.canUndo,
-                hasMarks = state.hasMarks,
-                isQuestionMode = state.isQuestionMode,
-                onUndo = viewModel::undo,
-                onToggleQuestionMode = viewModel::toggleQuestionMode,
-                onClearMarks = viewModel::clearMarks,
-                onClearAll = { confirmClear = true }
-            )
-
-            if (!isClassic) {
-                Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = { viewModel.checkSolution() },
-                    enabled = state.canCheck,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.action_check))
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
+        }
+        val status: @Composable () -> Unit = {
             Text(
-                text = stringResource(R.string.crowns_gesture_help),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                text = if (isClassic) {
+                    stringResource(R.string.hints_remaining, session.hintsRemaining)
+                } else {
+                    stringResource(R.string.mode_hardcore_label)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        val panel: @Composable () -> Unit = {
+            ControlsPanel(
+                state = state,
+                isClassic = isClassic,
+                onDismissHint = viewModel::dismissHint,
+                actions = ControlActions(
+                    onUndo = viewModel::undo,
+                    onToggleQuestionMode = viewModel::toggleQuestionMode,
+                    onClearMarks = viewModel::clearMarks,
+                    onClearAll = { confirmClear = true },
+                    onCheck = { viewModel.checkSolution() }
+                )
+            )
+        }
+
+        if (maxWidth > maxHeight) {
+            // Landscape: the grid takes the full height, the controls sit beside it.
+            val gridSide = minOf(maxHeight - SCREEN_PADDING * 2, maxWidth * LANDSCAPE_GRID_SHARE, MAX_GRID_SIDE)
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = sideMargin, vertical = SCREEN_PADDING),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                board(gridSide)
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .widthIn(max = MAX_PANEL_WIDTH)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    status()
+                    Spacer(Modifier.height(12.dp))
+                    panel()
+                }
+            }
+        } else {
+            // Portrait: grid on top, controls below; the column scrolls if they don't fit.
+            val gridSide = minOf(maxWidth - sideMargin * 2, maxHeight * PORTRAIT_GRID_SHARE, MAX_GRID_SIDE)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(SCREEN_PADDING),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                status()
+                Spacer(Modifier.height(8.dp))
+                board(gridSide)
+                Spacer(Modifier.height(8.dp))
+                Column(Modifier.widthIn(max = MAX_PANEL_WIDTH), horizontalAlignment = Alignment.CenterHorizontally) {
+                    panel()
+                }
+            }
         }
       }
 
@@ -264,6 +267,81 @@ fun CrownsScreen(
                 viewModel.dismissWin()
                 onBack()
             }
+        )
+    }
+}
+
+private val SCREEN_PADDING = 12.dp
+
+/** A grid larger than this (tablets) only makes cells huge: cap it. */
+private val MAX_GRID_SIDE = 560.dp
+private val MAX_PANEL_WIDTH = 480.dp
+private const val PORTRAIT_GRID_SHARE = 0.7f
+private const val LANDSCAPE_GRID_SHARE = 0.6f
+
+private class ControlActions(
+    val onUndo: () -> Unit,
+    val onToggleQuestionMode: () -> Unit,
+    val onClearMarks: () -> Unit,
+    val onClearAll: () -> Unit,
+    val onCheck: () -> Unit
+)
+
+/** Hint message, the control row, Hardcore's Check button and the gesture reminder. */
+@Composable
+private fun ControlsPanel(
+    state: CrownsUiState,
+    isClassic: Boolean,
+    onDismissHint: () -> Unit,
+    actions: ControlActions
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        state.hint?.let { hint ->
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onDismissHint)
+            ) {
+                Text(
+                    text = crownsHintMessage(hint.hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Controls(
+            canUndo = state.canUndo,
+            hasMarks = state.hasMarks,
+            isQuestionMode = state.isQuestionMode,
+            onUndo = actions.onUndo,
+            onToggleQuestionMode = actions.onToggleQuestionMode,
+            onClearMarks = actions.onClearMarks,
+            onClearAll = actions.onClearAll
+        )
+
+        if (!isClassic) {
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = actions.onCheck,
+                enabled = state.canCheck,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.action_check))
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.crowns_gesture_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
     }
 }
