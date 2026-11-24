@@ -138,6 +138,6 @@
     <string name="crowns_howto_erase_title">Erasing</string>
     <string name="crowns_howto_erase_body">Swipe from a ✕ or ? to erase the marks you pass over. Crowns stay.\n\nThe broom (Clear marks) removes every ✕ and ? and keeps your crowns. The bin (Clear all) empties the whole grid.\n\nUndo reverts your last action.</string>
     <string name="crowns_howto_modes_title">Classic or Hardcore</string>
-    <string name="crowns_howto_modes_body">Classic: crowns that break a rule are outlined in red, hints are available and the game ends by itself once solved.\n\nHardcore: no help at all. Once every crown is placed, press Check.</string>
+    <string name="crowns_howto_modes_body">Classic: crowns that break a rule are highlighted, hints are available and the game ends by itself once solved.\n\nHardcore: no help at all. Once every crown is placed, press Check.</string>
     <string name="crowns_howto_example">Example grid</string>
 </resources>

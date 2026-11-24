@@ -7,13 +7,18 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import com.payfacto.braingames.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +36,18 @@ fun GameTopBar(
     onHelp: (() -> Unit)? = null
 ) {
     TopAppBar(
-        title = { Text(title) },
+        title = {
+            // One line, shrinking to fit: with four actions on a 360dp phone a long title
+            // ("Couronnes") would otherwise wrap in the middle of the word.
+            val style = LocalTextStyle.current
+            BasicText(
+                text = title,
+                style = style.copy(color = LocalContentColor.current),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = TextAutoSize.StepBased(minFontSize = MIN_TITLE_SIZE, maxFontSize = style.fontSize)
+            )
+        },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
@@ -72,3 +88,5 @@ fun GameTopBar(
         }
     )
 }
+
+private val MIN_TITLE_SIZE = 14.sp

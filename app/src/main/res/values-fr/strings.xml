@@ -139,6 +139,6 @@
     <string name="crowns_howto_erase_title">Effacer</string>
     <string name="crowns_howto_erase_body">Glissez depuis un ✕ ou un ? pour effacer les marques sur votre passage. Les couronnes restent.\n\nLe balai (Effacer les marques) retire tous les ✕ et ? et garde vos couronnes. La corbeille (Tout effacer) vide toute la grille.\n\nAnnuler défait votre dernière action.</string>
     <string name="crowns_howto_modes_title">Classique ou Hardcore</string>
-    <string name="crowns_howto_modes_body">Classique : les couronnes qui enfreignent une règle sont encadrées en rouge, des indices sont disponibles et la partie se termine d\'elle-même une fois résolue.\n\nHardcore : aucune aide. Une fois toutes les couronnes placées, appuyez sur Vérifier.</string>
+    <string name="crowns_howto_modes_body">Classique : les couronnes qui enfreignent une règle sont signalées, des indices sont disponibles et la partie se termine d\'elle-même une fois résolue.\n\nHardcore : aucune aide. Une fois toutes les couronnes placées, appuyez sur Vérifier.</string>
     <string name="crowns_howto_example">Grille d\'exemple</string>
 </resources>
