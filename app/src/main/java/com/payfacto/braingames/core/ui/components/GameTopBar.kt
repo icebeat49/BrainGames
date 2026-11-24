@@ -2,6 +2,7 @@ package com.payfacto.braingames.core.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.VolumeOff
@@ -25,13 +26,15 @@ fun GameTopBar(
     /** null hides the hint button entirely (e.g. Sudoku Hardcore). */
     onHint: (() -> Unit)?,
     onNewPuzzle: () -> Unit,
-    onToggleMute: () -> Unit
+    onToggleMute: () -> Unit,
+    /** null hides the "How to play" button (games without one). */
+    onHelp: (() -> Unit)? = null
 ) {
     TopAppBar(
         title = { Text(title) },
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         },
         actions = {
@@ -40,6 +43,14 @@ fun GameTopBar(
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = stringResource(R.string.action_hint)
+                    )
+                }
+            }
+            if (onHelp != null) {
+                IconButton(onClick = onHelp) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                        contentDescription = stringResource(R.string.how_to_play)
                     )
                 }
             }

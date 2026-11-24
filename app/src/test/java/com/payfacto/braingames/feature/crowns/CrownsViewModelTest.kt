@@ -3,7 +3,9 @@ package com.payfacto.braingames.feature.crowns
 import androidx.lifecycle.SavedStateHandle
 import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.data.HowToPlayPreferences
 import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.motion.MotionSettings
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.sound.SoundEvent
@@ -18,7 +20,9 @@ import com.payfacto.braingames.feature.crowns.model.CrownsBoard
 import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
 import com.payfacto.braingames.feature.crowns.model.CellMark
 import com.payfacto.braingames.testutil.MainDispatcherRule
+import com.payfacto.braingames.testutil.FakePreferencesDataStore
 import com.payfacto.braingames.testutil.fakePreferencesRepository
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -45,16 +49,19 @@ class CrownsViewModelTest {
     private val emptyBoard = CrownsBoard.empty(5)
 
     /** Dependencies for one game; calling newViewModel again simulates recreation. */
-    private inner class Fixture(mode: GameMode, animations: Boolean = false) {
+    private inner class Fixture(mode: GameMode, animations: Boolean = false, howToPlaySeen: Boolean = true) {
         val savedState = SavedStateHandle(
             mapOf(Screen.ARG_DIFFICULTY to Difficulty.VERY_EASY.name, Screen.ARG_MODE to mode.name)
         )
         val source = RecordingSource(puzzle)
         private val preferences = fakePreferencesRepository()
         private val motion = MotionSettings { animations }
+        val howToPlay = HowToPlayPreferences(FakePreferencesDataStore()).apply {
+            if (howToPlaySeen) runBlocking { markSeen(GameType.CROWNS) }
+        }
 
         fun TestScope.newViewModel() =
-            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource, motion)
+            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource, motion, howToPlay)
                 .also { advanceUntilIdle() }
     }
 
@@ -458,6 +465,51 @@ class CrownsViewModelTest {
 
         assertFalse(viewModel.state.value.canUndo)
         assertEquals(emptyBoard, viewModel.state.value.board)
+    }
+
+    // ── How to play ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `how to play opens by itself the first time only`() = runTest(mainDispatcher.dispatcher) {
+        val fixture = Fixture(GameMode.CLASSIC, howToPlaySeen = false)
+        val first = with(fixture) { newViewModel() }
+        val openedFirstTime = first.state.value.showHowToPlay
+
+        first.closeHowToPlay()
+        advanceUntilIdle()
+        val second = with(fixture) { newViewModel() }
+
+        assertTrue(openedFirstTime)
+        assertFalse(first.state.value.showHowToPlay)
+        assertFalse(second.state.value.showHowToPlay)
+    }
+
+    @Test
+    fun `how to play stays closed once seen and opens from the help button`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        val openedAtStart = viewModel.state.value.showHowToPlay
+
+        viewModel.openHowToPlay()
+
+        assertFalse(openedAtStart)
+        assertTrue(viewModel.state.value.showHowToPlay)
+    }
+
+    @Test
+    fun `the clock pauses while how to play is open`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.onScreenVisible()
+        advanceTimeBy(3_000)
+        viewModel.openHowToPlay()
+        advanceTimeBy(10_000)
+        val whileOpen = viewModel.session.value.elapsedSeconds
+
+        viewModel.closeHowToPlay()
+        advanceTimeBy(2_000)
+        viewModel.onScreenHidden()
+
+        assertEquals(3L, whileOpen)
+        assertEquals(5L, viewModel.session.value.elapsedSeconds)
     }
 
     // ── Sounds ──────────────────────────────────────────────────────────────

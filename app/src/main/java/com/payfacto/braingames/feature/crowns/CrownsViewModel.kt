@@ -3,11 +3,13 @@ package com.payfacto.braingames.feature.crowns
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.payfacto.braingames.core.data.HowToPlayPreferences
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.FailedCheck
 import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.motion.MotionSettings
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.sound.SoundEvent
@@ -35,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -68,7 +71,9 @@ data class CrownsUiState(
     /** Hardcore: wrong crowns revealed by "Show where", until one of them changes. */
     val errorCells: Set<Int> = emptySet(),
     /** The grid is solved: the board celebrates, then the win screen shows. Input is locked. */
-    val isSolved: Boolean = false
+    val isSolved: Boolean = false,
+    /** "How to play" is open; the clock is paused meanwhile. */
+    val showHowToPlay: Boolean = false
 ) {
     val isPlayable: Boolean get() = puzzle != null && !isGenerating && !isSolved
 
@@ -85,7 +90,8 @@ class CrownsViewModel @Inject constructor(
     private val puzzleSource: CrownsPuzzleSource,
     repository: PreferencesRepository,
     timeSource: TimeSource,
-    private val motionSettings: MotionSettings
+    private val motionSettings: MotionSettings,
+    private val howToPlay: HowToPlayPreferences
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
@@ -120,7 +126,12 @@ class CrownsViewModel @Inject constructor(
      */
     val sounds: Flow<SoundEvent> = _sounds.receiveAsFlow()
 
+    private var isScreenVisible = false
+
     init {
+        viewModelScope.launch {
+            if (!howToPlay.hasSeen(GameType.CROWNS).first()) setHowToPlayOpen(true)
+        }
         val puzzle = CrownsGameSaver.restorePuzzle(savedStateHandle)
         if (puzzle == null) {
             newPuzzle()
@@ -286,9 +297,38 @@ class CrownsViewModel @Inject constructor(
     fun dismissWin() = gameSession.dismissWin()
     fun toggleMute() = gameSession.toggleMute()
 
+    // ── How to play ─────────────────────────────────────────────────────────
+
+    fun openHowToPlay() = setHowToPlayOpen(true)
+
+    /** Closing it counts as seen: it won't open by itself again. */
+    fun closeHowToPlay() {
+        setHowToPlayOpen(false)
+        viewModelScope.launch { howToPlay.markSeen(GameType.CROWNS) }
+    }
+
+    private fun setHowToPlayOpen(open: Boolean) {
+        _state.update { it.copy(showHowToPlay = open) }
+        updateClock()
+    }
+
+    // ── Clock ───────────────────────────────────────────────────────────────
+
     /** Call when the game screen becomes visible / hidden, so the clock pauses in the background. */
-    fun onScreenVisible() = gameSession.onForeground()
-    fun onScreenHidden() = gameSession.onBackground()
+    fun onScreenVisible() {
+        isScreenVisible = true
+        updateClock()
+    }
+
+    fun onScreenHidden() {
+        isScreenVisible = false
+        updateClock()
+    }
+
+    /** The clock runs only while the board itself is in front of the player. */
+    private fun updateClock() {
+        if (isScreenVisible && !_state.value.showHowToPlay) gameSession.onForeground() else gameSession.onBackground()
+    }
 
     // ── Board changes ───────────────────────────────────────────────────────
 

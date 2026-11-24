@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
@@ -125,6 +126,27 @@ fun CrownsGrid(
     ) {
         GridCanvas(puzzle, board, highlights, LocalRegionPalette.current, winGlow)
         AccessibilityCells(puzzle, board, highlights, isQuestionMode, currentInput)
+    }
+}
+
+/**
+ * The board as a picture, drawn by the same renderer as the game, without input or
+ * animations (How to play). TalkBack reads [description] instead of the cells.
+ */
+@Composable
+internal fun CrownsBoardPicture(
+    puzzle: CrownsPuzzle,
+    board: CrownsBoard,
+    description: String,
+    modifier: Modifier = Modifier,
+    highlights: CrownsGridHighlights = CrownsGridHighlights()
+) {
+    Box(
+        modifier
+            .aspectRatio(1f)
+            .clearAndSetSemantics { contentDescription = description }
+    ) {
+        GridCanvas(puzzle, board, highlights, LocalRegionPalette.current, animate = false)
     }
 }
 

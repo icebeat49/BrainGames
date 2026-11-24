@@ -110,7 +110,8 @@ fun CrownsScreen(
                     soundManager.play(SoundEvent.TAP)
                     viewModel.newPuzzle()
                 },
-                onToggleMute = viewModel::toggleMute
+                onToggleMute = viewModel::toggleMute,
+                onHelp = viewModel::openHowToPlay
             )
         }
     ) { padding ->
@@ -229,6 +230,10 @@ fun CrownsScreen(
                 onShowCount = viewModel::showWrongCount,
                 onShowWhere = viewModel::showWrongCells
             )
+        }
+
+        if (state.showHowToPlay) {
+            CrownsHowToPlayDialog(onClose = viewModel::closeHowToPlay)
         }
 
         if (confirmClear) {

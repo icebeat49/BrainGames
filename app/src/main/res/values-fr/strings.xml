@@ -27,6 +27,7 @@
     <string name="action_unmute">Son activé</string>
     <string name="hints_remaining">%1$d indices restants</string>
     <string name="action_undo">Annuler</string>
+    <string name="action_back">Retour</string>
 
     <!-- Win -->
     <string name="win_title">Grille résolue !</string>
@@ -125,4 +126,19 @@
     <string name="crowns_hint_group_regions_columns">Ces %1$d régions tiennent seulement dans les colonnes %2$s : ces colonnes sont vides partout ailleurs.</string>
     <string name="crowns_hint_group_rows_regions">Les lignes %2$s tiennent seulement dans ces %1$d régions : le reste de ces régions est vide.</string>
     <string name="crowns_hint_group_columns_regions">Les colonnes %2$s tiennent seulement dans ces %1$d régions : le reste de ces régions est vide.</string>
+    <!-- Couronnes : Comment jouer -->
+    <string name="how_to_play">Comment jouer</string>
+    <string name="how_to_play_page">Page %1$d sur %2$d</string>
+    <string name="action_previous">Précédent</string>
+    <string name="action_next">Suivant</string>
+    <string name="action_got_it">J\'ai compris</string>
+    <string name="crowns_howto_goal_title">Le but</string>
+    <string name="crowns_howto_goal_body">Placez une couronne dans chaque ligne, chaque colonne et chaque région de couleur.\n\nDeux couronnes ne doivent jamais se toucher, même en diagonale.</string>
+    <string name="crowns_howto_marks_title">Marquer les cases</string>
+    <string name="crowns_howto_marks_body">Touchez une case pour la barrer (✕). Touchez deux fois pour placer une couronne.\n\nGlissez depuis une case vide pour barrer plusieurs cases d\'un coup.\n\nLe bouton ✕/? fait écrire des ? à la place, pour les cases dont vous doutez. Touchez une marque pour l\'enlever.</string>
+    <string name="crowns_howto_erase_title">Effacer</string>
+    <string name="crowns_howto_erase_body">Glissez depuis un ✕ ou un ? pour effacer les marques sur votre passage. Les couronnes restent.\n\nLe balai (Effacer les marques) retire tous les ✕ et ? et garde vos couronnes. La corbeille (Tout effacer) vide toute la grille.\n\nAnnuler défait votre dernière action.</string>
+    <string name="crowns_howto_modes_title">Classique ou Hardcore</string>
+    <string name="crowns_howto_modes_body">Classique : les couronnes qui enfreignent une règle sont encadrées en rouge, des indices sont disponibles et la partie se termine d\'elle-même une fois résolue.\n\nHardcore : aucune aide. Une fois toutes les couronnes placées, appuyez sur Vérifier.</string>
+    <string name="crowns_howto_example">Grille d\'exemple</string>
 </resources>
