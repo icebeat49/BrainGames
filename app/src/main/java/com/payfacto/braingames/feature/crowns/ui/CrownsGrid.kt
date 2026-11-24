@@ -37,6 +37,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.payfacto.braingames.R
+import com.payfacto.braingames.core.motion.rememberAnimationsEnabled
 import com.payfacto.braingames.core.theme.LocalRegionPalette
 import com.payfacto.braingames.core.theme.RegionPalette
 import com.payfacto.braingames.core.ui.grid.GridGeometry
@@ -71,7 +72,9 @@ fun CrownsGrid(
     highlights: CrownsGridHighlights,
     isQuestionMode: Boolean,
     input: CrownsGridInput,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** 0..1: how strongly the whole board glows (win celebration). */
+    winGlow: () -> Float = { 0f }
 ) {
     val currentInput by rememberUpdatedState(input)
     val n = puzzle.size
@@ -120,7 +123,7 @@ fun CrownsGrid(
                 }
             }
     ) {
-        GridCanvas(puzzle, board, highlights, LocalRegionPalette.current)
+        GridCanvas(puzzle, board, highlights, LocalRegionPalette.current, winGlow)
         AccessibilityCells(puzzle, board, highlights, isQuestionMode, currentInput)
     }
 }
@@ -130,9 +133,12 @@ private fun GridCanvas(
     puzzle: CrownsPuzzle,
     board: CrownsBoard,
     highlights: CrownsGridHighlights,
-    palette: RegionPalette
+    palette: RegionPalette,
+    winGlow: () -> Float = { 0f },
+    animate: Boolean = rememberAnimationsEnabled()
 ) {
     val colors = MaterialTheme.colorScheme
+    val crownTransitions = rememberCrownTransitions(puzzle, board.crowns, animate)
     val crownPainter = rememberVectorPainter(
         remember(palette) { crownVector(fill = palette.pieceFill, outline = palette.pieceOutline) }
     )
@@ -160,6 +166,18 @@ private fun GridCanvas(
         for (cell in 0 until puzzle.cellCount) {
             val origin = topLeft(cell)
             val isFlagged = cell in highlights.conflictCells || cell in highlights.errorCells
+            val transition = crownTransitions[cell]?.value
+            fun drawCrown(progress: Float) {
+                val scale = CrownsAnimations.CROWN_MIN_SCALE + (1f - CrownsAnimations.CROWN_MIN_SCALE) * progress
+                val iconSize = cellSize.minDimension * CROWN_SIZE * scale
+                val painter = if (isFlagged) flaggedCrownPainter else crownPainter
+                translate(
+                    left = origin.x + (cellSize.width - iconSize) / 2f,
+                    top = origin.y + (cellSize.height - iconSize) / 2f
+                ) {
+                    with(painter) { draw(Size(iconSize, iconSize), alpha = progress) }
+                }
+            }
             when (board[cell]) {
                 CellMark.EMPTY -> Unit
                 CellMark.CROSS -> drawCross(origin, cellSize, colors.onSurface.copy(alpha = 0.75f))
@@ -174,17 +192,10 @@ private fun GridCanvas(
                         )
                     )
                 }
-                CellMark.CROWN -> {
-                    val iconSize = cellSize.minDimension * 0.78f
-                    val painter = if (isFlagged) flaggedCrownPainter else crownPainter
-                    translate(
-                        left = origin.x + (cellSize.width - iconSize) / 2f,
-                        top = origin.y + (cellSize.height - iconSize) / 2f
-                    ) {
-                        with(painter) { draw(Size(iconSize, iconSize)) }
-                    }
-                }
+                CellMark.CROWN -> drawCrown(transition ?: 1f)
             }
+            // A crown just removed fades out over whatever the cell holds now.
+            if (board[cell] != CellMark.CROWN && transition != null) drawCrown(transition)
             if (cell in highlights.conflictCells) {
                 val inset = cellSize.minDimension * 0.06f
                 drawRect(
@@ -197,8 +208,19 @@ private fun GridCanvas(
         }
 
         drawRegionLines(puzzle, geometry, colors.onSurface)
+
+        val glow = winGlow()
+        if (glow > 0f) {
+            drawRect(palette.pieceFill.copy(alpha = WIN_GLOW_FILL_ALPHA * glow))
+            drawRect(palette.pieceFill.copy(alpha = glow), style = Stroke(width = WIN_GLOW_BORDER.toPx()))
+        }
     }
 }
+
+/** A crown fills this fraction of its cell. */
+private const val CROWN_SIZE = 0.78f
+private const val WIN_GLOW_FILL_ALPHA = 0.35f
+private val WIN_GLOW_BORDER = 6.dp
 
 private fun DrawScope.drawCross(origin: Offset, cell: Size, color: Color) {
     val inset = cell.minDimension * 0.3f

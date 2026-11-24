@@ -1,5 +1,7 @@
 package com.payfacto.braingames.core.di
 
+import com.payfacto.braingames.core.motion.MotionSettings
+import com.payfacto.braingames.core.motion.SystemMotionSettings
 import com.payfacto.braingames.feature.crowns.data.BundledCrownsPuzzleSource
 import com.payfacto.braingames.feature.crowns.data.CrownsPuzzleSource
 import com.payfacto.braingames.feature.kakuro.data.BundledKakuroPuzzleSource
@@ -30,6 +32,9 @@ abstract class GameModule {
 
     @Binds
     abstract fun bindCrownsPuzzleSource(impl: BundledCrownsPuzzleSource): CrownsPuzzleSource
+
+    @Binds
+    abstract fun bindMotionSettings(impl: SystemMotionSettings): MotionSettings
 
     companion object {
         /** Clock used by GameSession; tests substitute the coroutine scheduler's virtual time. */

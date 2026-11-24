@@ -1,5 +1,7 @@
 package com.payfacto.braingames.feature.crowns.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
 import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.core.motion.rememberAnimationsEnabled
 import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.CheckFailedDialog
@@ -78,6 +82,18 @@ fun CrownsScreen(
 
     LaunchedEffect(session.showWin) {
         if (session.showWin) soundManager.play(SoundEvent.WIN)
+    }
+
+    // Brief glow of the whole board on a win, before the win screen (which waits for it).
+    val animate = rememberAnimationsEnabled()
+    val winGlow = remember { Animatable(0f) }
+    LaunchedEffect(state.isSolved) {
+        if (state.isSolved && animate && !session.showWin) {
+            winGlow.animateTo(1f, tween(CrownsAnimations.WIN_GLOW_IN_MILLIS))
+            winGlow.animateTo(0f, tween(CrownsAnimations.WIN_GLOW_OUT_MILLIS))
+        } else {
+            winGlow.snapTo(0f)
+        }
     }
 
     Scaffold(
@@ -140,7 +156,8 @@ fun CrownsScreen(
                         onDragEnd = viewModel::onDragEnd,
                         onSetMark = viewModel::setMark
                     ),
-                    modifier = Modifier.size(gridSide)
+                    modifier = Modifier.size(gridSide),
+                    winGlow = { winGlow.value }
                 )
             }
 

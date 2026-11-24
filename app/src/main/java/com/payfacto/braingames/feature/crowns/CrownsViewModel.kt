@@ -8,6 +8,7 @@ import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.FailedCheck
 import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.core.motion.MotionSettings
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.grid.GridPoint
@@ -25,6 +26,7 @@ import com.payfacto.braingames.feature.crowns.input.BoardEdit
 import com.payfacto.braingames.feature.crowns.model.CrownsBoard
 import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
 import com.payfacto.braingames.feature.crowns.model.CellMark
+import com.payfacto.braingames.feature.crowns.ui.CrownsAnimations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +34,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
 /** The hint on screen: what it says and which cells it is about. */
@@ -58,9 +62,11 @@ data class CrownsUiState(
     /** Hardcore: set while the "Not quite right" dialog is open. */
     val failedCheck: FailedCheck? = null,
     /** Hardcore: wrong crowns revealed by "Show where", until one of them changes. */
-    val errorCells: Set<Int> = emptySet()
+    val errorCells: Set<Int> = emptySet(),
+    /** The grid is solved: the board celebrates, then the win screen shows. Input is locked. */
+    val isSolved: Boolean = false
 ) {
-    val isPlayable: Boolean get() = puzzle != null && !isGenerating
+    val isPlayable: Boolean get() = puzzle != null && !isGenerating && !isSolved
 
     /** Hardcore's Check button: enabled once N crowns are on the board. */
     val canCheck: Boolean get() = isPlayable && board.crowns.size == puzzle?.size
@@ -74,7 +80,8 @@ class CrownsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val puzzleSource: CrownsPuzzleSource,
     repository: PreferencesRepository,
-    timeSource: TimeSource
+    timeSource: TimeSource,
+    private val motionSettings: MotionSettings
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
@@ -113,7 +120,8 @@ class CrownsViewModel @Inject constructor(
                     puzzle = puzzle,
                     board = board,
                     canUndo = undoStack.canUndo,
-                    conflictCells = conflictsOf(puzzle, board)
+                    conflictCells = conflictsOf(puzzle, board),
+                    isSolved = session.value.showWin
                 )
             }
         }
@@ -130,7 +138,8 @@ class CrownsViewModel @Inject constructor(
                 conflictCells = emptySet(),
                 hint = null,
                 failedCheck = null,
-                errorCells = emptySet()
+                errorCells = emptySet(),
+                isSolved = false
             )
         }
         viewModelScope.launch {
@@ -238,7 +247,7 @@ class CrownsViewModel @Inject constructor(
         val wrongCells = crowns - puzzle.solutionCells
         if (wrongCells.isEmpty() && crowns.size == puzzle.size) {
             _state.update { it.copy(failedCheck = null, errorCells = emptySet()) }
-            gameSession.complete()
+            win()
             return CheckResult.Solved
         }
         _state.update { it.copy(failedCheck = FailedCheck(wrongCells)) }
@@ -299,7 +308,13 @@ class CrownsViewModel @Inject constructor(
                 errorCells = if (changedCells.any { cell -> cell in it.errorCells }) emptySet() else it.errorCells
             )
         }
-        if (isClassic && CrownsValidator.isSolved(puzzle, newBoard)) gameSession.complete()
+        if (isClassic && CrownsValidator.isSolved(puzzle, newBoard)) win()
+    }
+
+    /** Locks the board for its short win highlight, then shows the win screen. */
+    private fun win() {
+        _state.update { it.copy(isSolved = true) }
+        gameSession.complete(winDelay = if (motionSettings.animationsEnabled()) WIN_HIGHLIGHT else Duration.ZERO)
     }
 
     private fun conflictsOf(puzzle: CrownsPuzzle, board: CrownsBoard): Set<Int> =
@@ -322,8 +337,11 @@ class CrownsViewModel @Inject constructor(
         CrownsHint.Solved -> HintDisplay(hint, emptySet(), emptySet())
     }
 
-    private companion object {
+    companion object {
         /** Each entry is a whole board (≤ 81 marks), so the saved history stays small. */
-        const val UNDO_LIMIT = 100
+        private const val UNDO_LIMIT = 100
+
+        /** How long the board celebrates before the win screen; matches the grid's highlight. */
+        val WIN_HIGHLIGHT = CrownsAnimations.WIN_HIGHLIGHT_MILLIS.milliseconds
     }
 }

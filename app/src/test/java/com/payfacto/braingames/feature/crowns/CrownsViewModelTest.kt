@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.core.motion.MotionSettings
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.ui.grid.GridPoint
 import com.payfacto.braingames.core.ui.navigation.Screen
@@ -19,6 +20,7 @@ import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.fakePreferencesRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -27,6 +29,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CrownsViewModelTest {
@@ -39,15 +42,17 @@ class CrownsViewModelTest {
     private val emptyBoard = CrownsBoard.empty(5)
 
     /** Dependencies for one game; calling newViewModel again simulates recreation. */
-    private inner class Fixture(mode: GameMode) {
+    private inner class Fixture(mode: GameMode, animations: Boolean = false) {
         val savedState = SavedStateHandle(
             mapOf(Screen.ARG_DIFFICULTY to Difficulty.VERY_EASY.name, Screen.ARG_MODE to mode.name)
         )
         val source = RecordingSource(puzzle)
         private val preferences = fakePreferencesRepository()
+        private val motion = MotionSettings { animations }
 
         fun TestScope.newViewModel() =
-            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource).also { advanceUntilIdle() }
+            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource, motion)
+                .also { advanceUntilIdle() }
     }
 
     private var clock = 10_000L
@@ -224,6 +229,44 @@ class CrownsViewModelTest {
         assertFalse(viewModel.useHint())
         assertEquals(0, viewModel.session.value.hintsRemaining)
         assertEquals(emptyBoard, viewModel.state.value.board)
+    }
+
+    @Test
+    fun `a win locks the board, highlights it, then shows the win screen`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = with(Fixture(GameMode.CLASSIC, animations = true)) { newViewModel() }
+
+        viewModel.placeAll(puzzle.solutionCells)
+        val showWinDuringHighlight = viewModel.session.value.showWin
+        viewModel.tap(cell(1, 1))
+        val boardAfterLockedTap = viewModel.state.value.board
+        advanceTimeBy(CrownsViewModel.WIN_HIGHLIGHT + 1.milliseconds)
+
+        assertTrue(viewModel.state.value.isSolved)
+        assertFalse(showWinDuringHighlight)
+        assertEquals(CellMark.EMPTY, boardAfterLockedTap[cell(1, 1)])
+        assertTrue(viewModel.session.value.showWin)
+    }
+
+    @Test
+    fun `with animations off the win screen shows at once`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+
+        viewModel.placeAll(puzzle.solutionCells)
+
+        assertTrue(viewModel.state.value.isSolved)
+        assertTrue(viewModel.session.value.showWin)
+    }
+
+    @Test
+    fun `a new puzzle unlocks the board`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.placeAll(puzzle.solutionCells)
+
+        viewModel.newPuzzle()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isSolved)
+        assertTrue(viewModel.state.value.isPlayable)
     }
 
     @Test
