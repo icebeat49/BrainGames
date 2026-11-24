@@ -29,8 +29,7 @@ android {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             buildConfigField("boolean", "FEATURE_WORD_SEARCH", "false")
-            // Off until the game is finished (real art, final difficulty tuning).
-            buildConfigField("boolean", "FEATURE_CROWNS", "false")
+            buildConfigField("boolean", "FEATURE_CROWNS", "true")
         }
     }
     compileOptions {
