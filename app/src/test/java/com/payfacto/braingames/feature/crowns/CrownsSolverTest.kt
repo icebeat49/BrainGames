@@ -52,6 +52,23 @@ class CrownsSolverTest {
         assertFalse(CrownsSolver.solve(rowsAsRegions).solved)
     }
 
+    // ── Immediate crowns ────────────────────────────────────────────────────
+
+    @Test
+    fun `immediate crowns stop at the first step that needs more than a single candidate`() {
+        assertEquals(1, CrownsSolver.immediateCrowns(puzzle))
+    }
+
+    @Test
+    fun `immediate crowns follow the chain a single-cell region opens`() {
+        assertEquals(5, CrownsSolver.immediateCrowns(CrownsTestGrids.singleCandidateChain))
+    }
+
+    @Test
+    fun `without a single-cell region no crown is immediate`() {
+        assertEquals(0, CrownsSolver.immediateCrowns(rowsAsRegions))
+    }
+
     // ── Individual techniques ───────────────────────────────────────────────
 
     @Test

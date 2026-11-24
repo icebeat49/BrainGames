@@ -7,16 +7,21 @@ import kotlin.random.Random
 
 /**
  * Builds puzzles with exactly one solution that the logical solver can reach without guessing,
- * at the requested difficulty.
+ * at the requested difficulty and within its [RegionRules].
  *
+ * 0. Decide once per puzzle, at random with [RegionRules.singleCellChance], whether it gets
+ *    one 1-cell region; retries keep that decision, so the frequency matches the target.
  * 1. Place N non-touching crowns: a random permutation with no two consecutive rows in
  *    neighbouring columns. This is the solution.
- * 2. Grow N regions from those cells by randomised flood fill.
+ * 2. Grow N regions from those cells, always extending the smallest region that can grow
+ *    ([RegionLayout.growBalanced]); then bring any undersized region back to the minimum by
+ *    taking border cells from larger neighbours ([RegionLayout.fixSmallRegions]).
  * 3. Repair until accepted, at most [maxRepairs] times:
  *    - a second solution exists → move one of its crown cells into a neighbouring region,
  *      which then holds two of its crowns, so that solution dies (ours is untouched);
- *    - unique but not solvable by logic, or wrong difficulty → move a random border cell.
- *    Moves never touch solution cells and never split a region.
+ *    - unique but not solvable by logic, wrong difficulty or too many immediate crowns →
+ *      move a random border cell.
+ *    Moves never touch solution cells, never split a region and never break the region rules.
  * 4. Start again with a new layout, at most [maxLayouts] times; then give up (null).
  *
  * Pure and single-threaded: call it from Dispatchers.Default.
@@ -29,32 +34,55 @@ class CrownsGenerator(
 
     fun generate(difficulty: Difficulty): CrownsPuzzle? {
         val size = CrownsDifficulty.sizeFor(difficulty)
+        val rules = CrownsGenerationRules.forDifficulty(difficulty)
+        val withSingleCell = random.nextDouble() < rules.singleCellChance
         repeat(maxLayouts) {
             val solution = randomSolution(size)
-            val regions = growRegions(size, solution)
-            repair(size, regions, solution, difficulty)?.let { return it }
+            val layout = regionLayout(size, solution, rules, withSingleCell) ?: return@repeat
+            repair(layout, size, solution, difficulty, rules)?.let { return it }
         }
         return null
     }
 
-    private fun repair(size: Int, regions: IntArray, solution: IntArray, difficulty: Difficulty): CrownsPuzzle? {
+    private fun regionLayout(size: Int, solution: IntArray, rules: RegionRules, withSingleCell: Boolean): RegionLayout? {
+        val seeds = IntArray(size) { row -> row * size + solution[row] }
+        // Region ids are shuffled so that region 0 is not always the top row's region.
+        val ids = (0 until size).shuffled(random)
+        val seedOfRegion = IntArray(size).also { bySeed -> ids.forEachIndexed { row, id -> bySeed[id] = seeds[row] } }
+        val singleCellRegion = if (withSingleCell) random.nextInt(size) else null
+        val layout = RegionLayout(size, seedOfRegion, rules, singleCellRegion)
+        return layout.takeIf { it.growBalanced(random) && it.fixSmallRegions(random) }
+    }
+
+    private fun repair(
+        layout: RegionLayout,
+        size: Int,
+        solution: IntArray,
+        difficulty: Difficulty,
+        rules: RegionRules
+    ): CrownsPuzzle? {
         val solutionCells = solution.withIndex().map { (row, col) -> row * size + col }.toSet()
         repeat(maxRepairs) {
-            val puzzle = CrownsPuzzle(size, regions, solution)
+            val puzzle = CrownsPuzzle(size, layout.regions(), solution)
             val alternative = CrownsSolver.findSolutions(puzzle, limit = 2)
                 .firstOrNull { !it.contentEquals(solution) }
             val moved = if (alternative != null) {
                 val alternativeCells = alternative.withIndex().map { (row, col) -> row * size + col }
-                breakAlternative(size, regions, alternativeCells - solutionCells) ||
-                    moveRandomBorderCell(size, regions, solutionCells)
+                breakAlternative(layout, alternativeCells - solutionCells) || moveRandomBorderCell(layout)
             } else {
-                val result = CrownsSolver.solve(puzzle)
-                if (result.solved && CrownsDifficulty.accepts(difficulty, result.hardest)) return puzzle
-                moveRandomBorderCell(size, regions, solutionCells)
+                if (isAccepted(puzzle, difficulty, rules)) return puzzle
+                moveRandomBorderCell(layout)
             }
             if (!moved) return null
         }
         return null
+    }
+
+    private fun isAccepted(puzzle: CrownsPuzzle, difficulty: Difficulty, rules: RegionRules): Boolean {
+        val result = CrownsSolver.solve(puzzle)
+        return result.solved &&
+            CrownsDifficulty.accepts(difficulty, result.hardest) &&
+            CrownsSolver.immediateCrowns(puzzle) <= rules.maxImmediateCrowns
     }
 
     // ── Step 1: solution ────────────────────────────────────────────────────
@@ -79,27 +107,6 @@ class CrownsGenerator(
         return columns
     }
 
-    // ── Step 2: regions ─────────────────────────────────────────────────────
-
-    /** Each solution cell seeds a region; unassigned cells next to a region join it at random. */
-    private fun growRegions(size: Int, solution: IntArray): IntArray {
-        val regions = IntArray(size * size) { UNASSIGNED }
-        val ids = (0 until size).shuffled(random)
-        solution.forEachIndexed { row, col -> regions[row * size + col] = ids[row] }
-
-        var unassigned = size * size - size
-        while (unassigned > 0) {
-            val frontier = regions.indices.filter { cell ->
-                regions[cell] == UNASSIGNED && edgeNeighbours(size, cell).any { regions[it] != UNASSIGNED }
-            }
-            val cell = frontier.random(random)
-            val joined = edgeNeighbours(size, cell).filter { regions[it] != UNASSIGNED }.random(random)
-            regions[cell] = regions[joined]
-            unassigned--
-        }
-        return regions
-    }
-
     // ── Step 3: repairs ─────────────────────────────────────────────────────
 
     /**
@@ -107,50 +114,14 @@ class CrownsGenerator(
      * region holds exactly one crown of that solution, so the receiving region now holds
      * two and the alternative is no longer valid.
      */
-    private fun breakAlternative(size: Int, regions: IntArray, alternativeOnlyCells: List<Int>): Boolean =
-        alternativeOnlyCells.shuffled(random).any { cell -> moveToNeighbourRegion(size, regions, cell) }
+    private fun breakAlternative(layout: RegionLayout, alternativeOnlyCells: List<Int>): Boolean =
+        alternativeOnlyCells.shuffled(random).any { cell -> layout.moveToNeighbourRegion(cell, random) }
 
-    private fun moveRandomBorderCell(size: Int, regions: IntArray, solutionCells: Set<Int>): Boolean =
-        regions.indices.shuffled(random).any { cell ->
-            cell !in solutionCells && moveToNeighbourRegion(size, regions, cell)
-        }
-
-    /** Moves [cell] into a random edge-adjacent region, if its own region stays connected. */
-    private fun moveToNeighbourRegion(size: Int, regions: IntArray, cell: Int): Boolean {
-        val donor = regions[cell]
-        val receivers = edgeNeighbours(size, cell).map { regions[it] }.filter { it != donor }.distinct()
-        if (receivers.isEmpty() || !staysConnectedWithout(size, regions, donor, cell)) return false
-        regions[cell] = receivers.random(random)
-        return true
-    }
-
-    private fun staysConnectedWithout(size: Int, regions: IntArray, region: Int, removed: Int): Boolean {
-        val members = regions.indices.filter { regions[it] == region && it != removed }
-        if (members.isEmpty()) return false
-        val seen = HashSet<Int>()
-        val queue = ArrayDeque(listOf(members.first()))
-        while (queue.isNotEmpty()) {
-            val cell = queue.removeFirst()
-            if (!seen.add(cell)) continue
-            edgeNeighbours(size, cell).filterTo(queue) { regions[it] == region && it != removed && it !in seen }
-        }
-        return seen.size == members.size
-    }
-
-    private fun edgeNeighbours(size: Int, cell: Int): List<Int> {
-        val row = cell / size
-        val col = cell % size
-        val result = ArrayList<Int>(4)
-        if (row > 0) result.add(cell - size)
-        if (row < size - 1) result.add(cell + size)
-        if (col > 0) result.add(cell - 1)
-        if (col < size - 1) result.add(cell + 1)
-        return result
-    }
+    private fun moveRandomBorderCell(layout: RegionLayout): Boolean =
+        layout.regions().indices.shuffled(random).any { cell -> layout.moveToNeighbourRegion(cell, random) }
 
     companion object {
-        const val DEFAULT_MAX_LAYOUTS = 40
+        const val DEFAULT_MAX_LAYOUTS = 100
         const val DEFAULT_MAX_REPAIRS = 200
-        private const val UNASSIGNED = -1
     }
 }

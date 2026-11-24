@@ -25,6 +25,20 @@ object CrownsTestGrids {
         "DEEEE",
     )
 
+    /**
+     * Not unique-checked; built for [CrownsSolver.immediateCrowns]: region A is a single cell, and
+     * each crown placed by a single candidate leaves another area with a single candidate,
+     * all the way to the full solution (A, B, D, C, E).
+     */
+    val singleCandidateChain: CrownsPuzzle = parse(
+        "02413",
+        "ACCCC",
+        "BBBCC",
+        "DDDCC",
+        "DDEEC",
+        "DEEEE",
+    )
+
     /** Every row is its own region: any non-touching permutation works, so many solutions. */
     val rowsAsRegions: CrownsPuzzle = parse(
         "02413",
