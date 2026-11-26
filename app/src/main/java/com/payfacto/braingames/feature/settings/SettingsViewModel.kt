@@ -1,15 +1,17 @@
 package com.payfacto.braingames.feature.settings
 
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
+import com.payfacto.braingames.core.locale.AppLanguage
 import com.payfacto.braingames.core.model.AppPreferences
 import com.payfacto.braingames.core.theme.AppColorTheme
 import com.payfacto.braingames.core.theme.DarkMode
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,14 +35,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { repository.setDarkMode(mode) }
     }
 
-    fun setLanguage(tag: String) {
-        viewModelScope.launch { repository.setLanguageTag(tag) }
-        val localeList = if (tag.isEmpty()) {
-            LocaleListCompat.getEmptyLocaleList()
-        } else {
-            LocaleListCompat.forLanguageTags(tag)
-        }
-        AppCompatDelegate.setApplicationLocales(localeList)
+    private val _language = MutableStateFlow(AppLanguage.current())
+    val language: StateFlow<AppLanguage> = _language.asStateFlow()
+
+    /** Applies at once: the platform or AppCompat stores the choice and recreates the screen. */
+    fun setLanguage(language: AppLanguage) {
+        _language.value = language
+        AppLanguage.apply(language)
     }
 
     fun toggleMute() {

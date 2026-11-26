@@ -21,7 +21,8 @@ class PreferencesDataSource @Inject constructor(
     private object Keys {
         val COLOR_THEME       = stringPreferencesKey("color_theme")
         val DARK_MODE         = stringPreferencesKey("dark_mode")
-        val LANGUAGE_TAG      = stringPreferencesKey("language_tag")
+        /** Language chosen before AppCompat stored it; read once by [takeLegacyLanguageTag]. */
+        val LEGACY_LANGUAGE_TAG = stringPreferencesKey("language_tag")
         val IS_MUTED          = booleanPreferencesKey("is_muted")
         val SUDOKU_DIFFICULTY = stringPreferencesKey("sudoku_difficulty")
         val KAKURO_DIFFICULTY = stringPreferencesKey("kakuro_difficulty")
@@ -36,7 +37,6 @@ class PreferencesDataSource @Inject constructor(
             darkMode = prefs[Keys.DARK_MODE]
                 ?.let { runCatching { DarkMode.valueOf(it) }.getOrNull() }
                 ?: DarkMode.SYSTEM,
-            languageTag = prefs[Keys.LANGUAGE_TAG] ?: "",
             isMuted = prefs[Keys.IS_MUTED] ?: false,
             sudokuDifficulty = prefs[Keys.SUDOKU_DIFFICULTY]
                 ?.let { runCatching { Difficulty.valueOf(it) }.getOrNull() }
@@ -58,8 +58,17 @@ class PreferencesDataSource @Inject constructor(
         dataStore.edit { it[Keys.DARK_MODE] = mode.name }
     }
 
-    suspend fun setLanguageTag(tag: String) {
-        dataStore.edit { it[Keys.LANGUAGE_TAG] = tag }
+    /**
+     * The language saved by older versions, which never applied it, removed as it is read.
+     * Null when there is none, or once it has been taken.
+     */
+    suspend fun takeLegacyLanguageTag(): String? {
+        var tag: String? = null
+        dataStore.edit { prefs ->
+            tag = prefs[Keys.LEGACY_LANGUAGE_TAG]?.takeIf(String::isNotEmpty)
+            prefs.remove(Keys.LEGACY_LANGUAGE_TAG)
+        }
+        return tag
     }
 
     suspend fun setMuted(muted: Boolean) {

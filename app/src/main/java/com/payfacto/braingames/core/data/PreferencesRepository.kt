@@ -16,7 +16,7 @@ class PreferencesRepository @Inject constructor(
 
     suspend fun setColorTheme(theme: AppColorTheme) = dataSource.setColorTheme(theme)
     suspend fun setDarkMode(mode: DarkMode) = dataSource.setDarkMode(mode)
-    suspend fun setLanguageTag(tag: String) = dataSource.setLanguageTag(tag)
+    suspend fun takeLegacyLanguageTag(): String? = dataSource.takeLegacyLanguageTag()
     suspend fun setMuted(muted: Boolean) = dataSource.setMuted(muted)
     suspend fun setSudokuDifficulty(difficulty: Difficulty) = dataSource.setSudokuDifficulty(difficulty)
     suspend fun setKakuroDifficulty(difficulty: Difficulty) = dataSource.setKakuroDifficulty(difficulty)

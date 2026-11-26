@@ -80,6 +80,13 @@
 
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d mots trouvés</string>
+    <string name="wordsearch_hidden_word">Mot caché</string>
+    <plurals name="wordsearch_letters_remaining">
+        <item quantity="one">%1$d lettre restante</item>
+        <item quantity="many">%1$d lettres restantes</item>
+        <item quantity="other">%1$d lettres restantes</item>
+    </plurals>
+    <string name="wordsearch_clue">Indice : %1$s</string>
 
     <!-- Actions partagées -->
     <string name="action_clear">Effacer</string>

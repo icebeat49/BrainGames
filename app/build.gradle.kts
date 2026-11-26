@@ -43,6 +43,10 @@ android {
         compose = true
         buildConfig = true
     }
+    bundle {
+        // The language can be switched inside the app, so every install needs every language.
+        language { enableSplit = false }
+    }
 }
 
 kotlin {

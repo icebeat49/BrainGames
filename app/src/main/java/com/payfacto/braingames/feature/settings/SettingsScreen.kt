@@ -44,6 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
 import com.payfacto.braingames.core.config.FeatureFlags
+import com.payfacto.braingames.core.locale.AppLanguage
 import com.payfacto.braingames.core.theme.AppColorTheme
 import com.payfacto.braingames.core.theme.DarkMode
 import com.payfacto.braingames.core.theme.appColorScheme
@@ -55,6 +56,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val prefs by viewModel.preferences.collectAsStateWithLifecycle()
+    val language by viewModel.language.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -130,18 +132,18 @@ fun SettingsScreen(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
-                    selected = prefs.languageTag == "en",
-                    onClick = { viewModel.setLanguage("en") },
+                    selected = language == AppLanguage.ENGLISH,
+                    onClick = { viewModel.setLanguage(AppLanguage.ENGLISH) },
                     label = { Text(stringResource(R.string.settings_lang_english)) }
                 )
                 FilterChip(
-                    selected = prefs.languageTag == "fr",
-                    onClick = { viewModel.setLanguage("fr") },
+                    selected = language == AppLanguage.FRENCH,
+                    onClick = { viewModel.setLanguage(AppLanguage.FRENCH) },
                     label = { Text(stringResource(R.string.settings_lang_french)) }
                 )
                 FilterChip(
-                    selected = prefs.languageTag == "",
-                    onClick = { viewModel.setLanguage("") },
+                    selected = language == AppLanguage.SYSTEM,
+                    onClick = { viewModel.setLanguage(AppLanguage.SYSTEM) },
                     label = { Text(stringResource(R.string.settings_lang_system)) }
                 )
             }

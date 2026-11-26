@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -180,14 +181,16 @@ private fun HiddenWordCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Mot caché",
+                    text = stringResource(R.string.wordsearch_hidden_word),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 if (!isRevealed) {
                     Text(
-                        text = "$remainingLetters lettres restantes",
+                        text = pluralStringResource(
+                            R.plurals.wordsearch_letters_remaining, remainingLetters, remainingLetters
+                        ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -234,7 +237,7 @@ private fun HiddenWordCard(
             Spacer(Modifier.height(6.dp))
 
             Text(
-                text = "Indice : $hint",
+                text = stringResource(R.string.wordsearch_clue, hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
             )

@@ -1,6 +1,7 @@
 package com.payfacto.braingames.feature.wordsearch.data
 
 import android.content.Context
+import com.payfacto.braingames.core.locale.AppLanguage
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -14,11 +15,13 @@ interface WordSearchPuzzleSource {
 }
 
 class GeneratedWordSearchPuzzleSource @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val appContext: Context
 ) : WordSearchPuzzleSource {
 
-    override suspend fun newPuzzle(difficulty: Difficulty): WordSearchBoard =
-        withContext(Dispatchers.Default) {
+    override suspend fun newPuzzle(difficulty: Difficulty): WordSearchBoard {
+        // Words, themes and clues follow the app language, not the phone's.
+        val context = AppLanguage.localizedContext(appContext)
+        return withContext(Dispatchers.Default) {
             val gridSize = WordSearchGenerator.gridSizeFor(difficulty)
             val maxWordLen = gridSize.coerceAtMost(12)
             val words = WordBank.getWords(context, maxWordLen)
@@ -30,4 +33,5 @@ class GeneratedWordSearchPuzzleSource @Inject constructor(
                 WordSearchGenerator.generate(words, puzzle, difficulty)
             } ?: FallbackPuzzles.get(context, difficulty)
         }
+    }
 }
