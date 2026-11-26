@@ -16,6 +16,12 @@ object FeatureFlags {
 
     fun isEnabled(game: GameType): Boolean = game in enabledGames
 
+    /**
+     * Sound effects. When off, nothing plays and the mute controls are hidden;
+     * the sound code and the saved mute setting are kept for when it comes back.
+     */
+    val isSoundEnabled: Boolean = BuildConfig.FEATURE_SOUND
+
     /** Exhaustive on purpose: a new [GameType] must decide here whether it is shown. */
     internal fun enabledGamesFor(wordSearchEnabled: Boolean, crownsEnabled: Boolean): Set<GameType> =
         GameType.entries.filterTo(LinkedHashSet()) { game ->

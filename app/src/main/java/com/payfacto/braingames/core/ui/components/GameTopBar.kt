@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.payfacto.braingames.R
+import com.payfacto.braingames.core.config.FeatureFlags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,14 +77,16 @@ fun GameTopBar(
                     contentDescription = stringResource(R.string.action_new_puzzle)
                 )
             }
-            IconButton(onClick = onToggleMute) {
-                Icon(
-                    imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                    contentDescription = if (isMuted)
-                        stringResource(R.string.action_unmute)
-                    else
-                        stringResource(R.string.action_mute)
-                )
+            if (FeatureFlags.isSoundEnabled) {
+                IconButton(onClick = onToggleMute) {
+                    Icon(
+                        imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                        contentDescription = if (isMuted)
+                            stringResource(R.string.action_unmute)
+                        else
+                            stringResource(R.string.action_mute)
+                    )
+                }
             }
         }
     )

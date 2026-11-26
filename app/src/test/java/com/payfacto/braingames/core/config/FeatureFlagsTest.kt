@@ -35,6 +35,11 @@ class FeatureFlagsTest {
     }
 
     @Test
+    fun `sound is off until real sound files exist`() {
+        assertEquals(false, FeatureFlags.isSoundEnabled)
+    }
+
+    @Test
     fun `enabled games keep the GameType order used by the Home screen`() {
         val enabled = FeatureFlags.enabledGamesFor(wordSearchEnabled = true, crownsEnabled = true)
 

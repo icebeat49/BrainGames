@@ -24,12 +24,15 @@ android {
             // Hidden games stay reachable during development.
             buildConfigField("boolean", "FEATURE_WORD_SEARCH", "true")
             buildConfigField("boolean", "FEATURE_CROWNS", "true")
+            // Sound stays off until real sound files exist; the code is kept.
+            buildConfigField("boolean", "FEATURE_SOUND", "false")
         }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             buildConfigField("boolean", "FEATURE_WORD_SEARCH", "false")
             buildConfigField("boolean", "FEATURE_CROWNS", "true")
+            buildConfigField("boolean", "FEATURE_SOUND", "false")
         }
     }
     compileOptions {

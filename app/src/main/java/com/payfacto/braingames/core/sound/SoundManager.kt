@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
 import com.payfacto.braingames.R
+import com.payfacto.braingames.core.config.FeatureFlags
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,16 +32,21 @@ class SoundManager @Inject constructor(
     var isMuted: Boolean = false
 
     init {
+        if (FeatureFlags.isSoundEnabled) loadSounds()
+    }
+
+    /** Does nothing while sound is turned off by [FeatureFlags.isSoundEnabled] or muted. */
+    fun play(event: SoundEvent) {
+        if (!FeatureFlags.isSoundEnabled || isMuted) return
+        soundIds[event]?.let { soundPool.play(it, 1f, 1f, 1, 0, 1f) }
+    }
+
+    private fun loadSounds() {
         val loaded = mutableMapOf<Int, Int>()
         SoundEvent.entries.forEach { event ->
             val resource = resourceFor(event)
             soundIds[event] = loaded.getOrPut(resource) { soundPool.load(context, resource, 1) }
         }
-    }
-
-    fun play(event: SoundEvent) {
-        if (isMuted) return
-        soundIds[event]?.let { soundPool.play(it, 1f, 1f, 1, 0, 1f) }
     }
 
     private companion object {

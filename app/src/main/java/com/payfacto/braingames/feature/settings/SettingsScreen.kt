@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
+import com.payfacto.braingames.core.config.FeatureFlags
 import com.payfacto.braingames.core.theme.AppColorTheme
 import com.payfacto.braingames.core.theme.DarkMode
 import com.payfacto.braingames.core.theme.appColorScheme
@@ -145,24 +146,25 @@ fun SettingsScreen(
                 )
             }
 
-            HorizontalDivider(Modifier.padding(vertical = 20.dp))
-
             // ── Sound ─────────────────────────────────────────────────────────
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_sound)) },
-                leadingContent = {
-                    Icon(
-                        if (prefs.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                        contentDescription = null
-                    )
-                },
-                trailingContent = {
-                    Switch(
-                        checked = !prefs.isMuted,
-                        onCheckedChange = { viewModel.toggleMute() }
-                    )
-                }
-            )
+            if (FeatureFlags.isSoundEnabled) {
+                HorizontalDivider(Modifier.padding(vertical = 20.dp))
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_sound)) },
+                    leadingContent = {
+                        Icon(
+                            if (prefs.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                            contentDescription = null
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = !prefs.isMuted,
+                            onCheckedChange = { viewModel.toggleMute() }
+                        )
+                    }
+                )
+            }
 
             Spacer(Modifier.height(24.dp))
         }
