@@ -4,7 +4,7 @@ Steps run in order. Do not start a step until it is asked for.
 Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
 
 1. ✅ **Diagnose**: language option, Kakuro difficulty, saving the current game. See `DIAGNOSIS.md`.
-2. **Hide sound and fix the language option**
+2. ✅ **Hide sound and fix the language option** (checked on an Android 8.1 device; Android 13+ not yet checked on a device)
    - Hide sound behind a feature flag (keep the code).
    - Language: `MainActivity` becomes an `AppCompatActivity`; add `locales_config.xml` + `android:localeConfig` and `AppLocalesMetadataHolderService` (`autoStoreLocales`). `AppCompatDelegate` is the single source of truth: drop `restoreLocale()` / `runBlocking` and migrate the `language_tag` pref.
    - Move the 3 hard-coded French strings in `WordSearchScreen` to `strings.xml`; Hidden Word picks its content language from the app locale, not the Application context.
@@ -31,6 +31,6 @@ Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
    - Stored in a separate typed DataStore (`stats.json`); keep total won time and compute the average.
    - A dedicated Stats screen, opened from the Home screen.
    - Reset per game or all, with confirmation.
-7. **Cleanup pass**: Kakuro dark mode, hard-coded text, Follow-ups list.
+7. **Cleanup pass**: Kakuro dark mode, hard-coded text, Follow-ups list. In French, the Settings colour-theme row is too wide ("Minuit" is cut off).
 8. **New app icon, then release**: adaptive icon, monochrome layer and Play Store icon, then release to Play internal testing.
 9. **Later**: Kakuro Hardcore, Hidden Word, sound.
