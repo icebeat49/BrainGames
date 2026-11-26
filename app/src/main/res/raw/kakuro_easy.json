@@ -44,48 +44,6 @@
     ]
   },
   {
-    "id": "e_02",
-    "rows": 7,
-    "cols": 7,
-    "cells": [
-      {"r":0,"c":0,"type":"BLACK"},{"r":0,"c":1,"type":"BLACK"},
-      {"r":0,"c":2,"type":"CLUE","down":6,"across":0},
-      {"r":0,"c":3,"type":"CLUE","down":15,"across":0},
-      {"r":0,"c":4,"type":"CLUE","down":12,"across":0},
-      {"r":0,"c":5,"type":"BLACK"},{"r":0,"c":6,"type":"BLACK"},
-
-      {"r":1,"c":0,"type":"BLACK"},
-      {"r":1,"c":1,"type":"CLUE","down":0,"across":6},
-      {"r":1,"c":2,"type":"INPUT","solution":1},
-      {"r":1,"c":3,"type":"INPUT","solution":2},
-      {"r":1,"c":4,"type":"INPUT","solution":3},
-      {"r":1,"c":5,"type":"BLACK"},{"r":1,"c":6,"type":"BLACK"},
-
-      {"r":2,"c":0,"type":"BLACK"},
-      {"r":2,"c":1,"type":"CLUE","down":0,"across":21},
-      {"r":2,"c":2,"type":"INPUT","solution":5},
-      {"r":2,"c":3,"type":"INPUT","solution":7},
-      {"r":2,"c":4,"type":"INPUT","solution":9},
-      {"r":2,"c":5,"type":"BLACK"},{"r":2,"c":6,"type":"BLACK"},
-
-      {"r":3,"c":0,"type":"BLACK"},{"r":3,"c":1,"type":"BLACK"},{"r":3,"c":2,"type":"BLACK"},
-      {"r":3,"c":3,"type":"BLACK"},{"r":3,"c":4,"type":"BLACK"},
-      {"r":3,"c":5,"type":"BLACK"},{"r":3,"c":6,"type":"BLACK"},
-
-      {"r":4,"c":0,"type":"BLACK"},{"r":4,"c":1,"type":"BLACK"},{"r":4,"c":2,"type":"BLACK"},
-      {"r":4,"c":3,"type":"BLACK"},{"r":4,"c":4,"type":"BLACK"},
-      {"r":4,"c":5,"type":"BLACK"},{"r":4,"c":6,"type":"BLACK"},
-
-      {"r":5,"c":0,"type":"BLACK"},{"r":5,"c":1,"type":"BLACK"},{"r":5,"c":2,"type":"BLACK"},
-      {"r":5,"c":3,"type":"BLACK"},{"r":5,"c":4,"type":"BLACK"},
-      {"r":5,"c":5,"type":"BLACK"},{"r":5,"c":6,"type":"BLACK"},
-
-      {"r":6,"c":0,"type":"BLACK"},{"r":6,"c":1,"type":"BLACK"},{"r":6,"c":2,"type":"BLACK"},
-      {"r":6,"c":3,"type":"BLACK"},{"r":6,"c":4,"type":"BLACK"},
-      {"r":6,"c":5,"type":"BLACK"},{"r":6,"c":6,"type":"BLACK"}
-    ]
-  },
-  {
     "id": "e_03",
     "rows": 7,
     "cols": 7,
