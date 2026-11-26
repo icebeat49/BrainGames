@@ -65,6 +65,8 @@ data class CrownsUiState(
     val canUndo: Boolean = false,
     /** Classic only: crowns breaking a rule. */
     val conflictCells: Set<Int> = emptySet(),
+    /** Classic only: crowns on the board that are not part of the solution, each shown for one hint. */
+    val wrongCrowns: Set<Int> = emptySet(),
     val hint: HintDisplay? = null,
     /** Hardcore: set while the "Not quite right" dialog is open. */
     val failedCheck: FailedCheck? = null,
@@ -76,6 +78,9 @@ data class CrownsUiState(
     val showHowToPlay: Boolean = false
 ) {
     val isPlayable: Boolean get() = puzzle != null && !isGenerating && !isSolved
+
+    /** Crowns on the board, for the "placed / total" counter. */
+    val crownCount: Int get() = board.crowns.size
 
     /** Hardcore's Check button: enabled once N crowns are on the board. */
     val canCheck: Boolean get() = isPlayable && board.crowns.size == puzzle?.size
@@ -107,6 +112,12 @@ class CrownsViewModel @Inject constructor(
     )
     private val gestures = CrownsGestures()
     private var undoStack = UndoStack<CrownsBoard>(UNDO_LIMIT)
+
+    /**
+     * Classic: every cell already shown as a wrong crown in this puzzle. A crown placed there
+     * again (by the player or by undo) shows as wrong without using another hint.
+     */
+    private val revealedWrong = CrownsGameSaver.restoreRevealedWrong(savedStateHandle).toMutableSet()
 
     private val _state = MutableStateFlow(
         CrownsUiState(
@@ -144,6 +155,7 @@ class CrownsViewModel @Inject constructor(
                     board = board,
                     canUndo = undoStack.canUndo,
                     conflictCells = conflictsOf(puzzle, board),
+                    wrongCrowns = revealedWrong intersect board.crowns,
                     isSolved = session.value.showWin
                 )
             }
@@ -153,12 +165,14 @@ class CrownsViewModel @Inject constructor(
     fun newPuzzle() {
         gameSession.reset()
         undoStack.clear()
+        revealedWrong.clear()
         CrownsGameSaver.clear(savedStateHandle)
         _state.update {
             it.copy(
                 isGenerating = true,
                 canUndo = false,
                 conflictCells = emptySet(),
+                wrongCrowns = emptySet(),
                 hint = null,
                 failedCheck = null,
                 errorCells = emptySet(),
@@ -235,18 +249,21 @@ class CrownsViewModel @Inject constructor(
     /**
      * Classic only. Applies the next hint as one undoable step (a wrong mark is removed,
      * a deduction is written, a reveal places its crown) and shows what it was about.
+     * Crowns already shown as wrong are left to the player: the hint reasons as if those
+     * cells were empty and never spends a hint on them.
      */
     fun useHint(): Boolean {
         val state = _state.value
         val puzzle = state.puzzle ?: return false
         if (!isClassic || !state.isPlayable || !gameSession.hasHints) return false
         val board = state.board
-        val hint = CrownsHintEngine.nextHint(puzzle, board)
+        val known = state.wrongCrowns
+        val hint = CrownsHintEngine.nextHint(puzzle, board.withMarks(known, CellMark.EMPTY))
         val hinted = when (hint) {
             CrownsHint.Solved -> return false
             is CrownsHint.WrongMark -> board.withMark(hint.cell, CellMark.EMPTY)
             is CrownsHint.Deduction -> board
-                .withMarks(hint.step.eliminations, CellMark.CROSS)
+                .withMarks(hint.step.eliminations - known, CellMark.CROSS)
                 .withMarks(hint.step.placements, CellMark.CROWN)
             is CrownsHint.Reveal -> board.withMark(hint.cell, CellMark.CROWN)
         }
@@ -352,7 +369,7 @@ class CrownsViewModel @Inject constructor(
         val newCrowns = state.board.crowns - before.crowns
         return when {
             newCrowns.isEmpty() -> SoundEvent.TAP
-            isClassic && newCrowns.any { it in state.conflictCells } -> SoundEvent.CONFLICT
+            isClassic && newCrowns.any { it in state.conflictCells || it in state.wrongCrowns } -> SoundEvent.CONFLICT
             else -> SoundEvent.CROWN_PLACED
         }
     }
@@ -379,18 +396,39 @@ class CrownsViewModel @Inject constructor(
         CrownsGameSaver.saveUndo(savedStateHandle, undoStack.toList())
 
         val changedCells = oldBoard.marks.indices.filterTo(HashSet()) { oldBoard[it] != newBoard[it] }
+        val newlyWrong = revealWrongCrowns(puzzle, newBoard)
         _state.update {
             it.copy(
                 board = newBoard,
                 canUndo = undoStack.canUndo,
                 conflictCells = conflictsOf(puzzle, newBoard),
-                hint = null,
+                wrongCrowns = revealedWrong intersect newBoard.crowns,
+                hint = newlyWrong.firstOrNull()?.let { cell -> wrongCrownHint(cell) },
                 errorCells = if (changedCells.any { cell -> cell in it.errorCells }) emptySet() else it.errorCells
             )
         }
         if (isClassic && CrownsValidator.isSolved(puzzle, newBoard)) win()
         return true
     }
+
+    /**
+     * Classic: shows each wrong crown not shown before, one hint each, while hints last.
+     * Returns the cells shown by this change.
+     */
+    private fun revealWrongCrowns(puzzle: CrownsPuzzle, board: CrownsBoard): List<Int> {
+        if (!isClassic) return emptyList()
+        val unseen = (board.crowns - puzzle.solutionCells - revealedWrong).sorted()
+        val shown = unseen.takeWhile { gameSession.consumeHint() }
+        if (shown.isNotEmpty()) {
+            revealedWrong += shown
+            CrownsGameSaver.saveRevealedWrong(savedStateHandle, revealedWrong)
+        }
+        return shown
+    }
+
+    /** The hint message explaining why a hint was used: "This crown is in the wrong place." */
+    private fun wrongCrownHint(cell: Int): HintDisplay =
+        HintDisplay(CrownsHint.WrongMark(cell, CellMark.CROWN), setOf(cell), emptySet())
 
     /** Locks the board for its short win highlight, then shows the win screen. */
     private fun win() {

@@ -95,9 +95,10 @@
     <!-- Couronnes -->
     <string name="home_play_crowns">Couronnes</string>
     <string name="home_desc_crowns">Placez une couronne dans chaque ligne, colonne et région de couleur, sans que deux couronnes se touchent.</string>
-    <string name="crowns_mode_classic_description">Règles enfreintes signalées, indices disponibles et victoire automatique.</string>
+    <string name="crowns_mode_classic_description">Règles enfreintes signalées, chaque couronne mal placée signalée contre un indice, et victoire automatique.</string>
     <string name="crowns_mode_hardcore_description">Aucune aide. Vérifiez votre grille une fois toutes les couronnes placées.</string>
     <string name="crowns_mark_with">Marque : %1$s</string>
+    <string name="crowns_placed">%1$d / %2$d couronnes</string>
     <string name="crowns_gesture_help">Toucher : marquer · Double toucher : couronne · Glisser depuis une case vide : marquer · Glisser depuis une marque : effacer</string>
     <string name="crowns_clear_marks_description">Effacer les marques : retirer tous les ✕ et ?, garder les couronnes</string>
     <string name="crowns_clear_all_description">Tout effacer : vider toute la grille, couronnes comprises</string>
@@ -146,6 +147,6 @@
     <string name="crowns_howto_erase_title">Effacer</string>
     <string name="crowns_howto_erase_body">Glissez depuis un ✕ ou un ? pour effacer les marques sur votre passage. Les couronnes restent.\n\nLe balai (Effacer les marques) retire tous les ✕ et ? et garde vos couronnes. La corbeille (Tout effacer) vide toute la grille.\n\nAnnuler défait votre dernière action.</string>
     <string name="crowns_howto_modes_title">Classique ou Hardcore</string>
-    <string name="crowns_howto_modes_body">Classique : les couronnes qui enfreignent une règle sont signalées, des indices sont disponibles et la partie se termine d\'elle-même une fois résolue.\n\nHardcore : aucune aide. Une fois toutes les couronnes placées, appuyez sur Vérifier.</string>
+    <string name="crowns_howto_modes_body">Classique : les couronnes qui enfreignent une règle sont signalées. Une couronne mal placée devient rouge et coûte un indice, tant qu\'il en reste. La partie se termine d\'elle-même une fois résolue.\n\nHardcore : aucune aide. Une fois toutes les couronnes placées, appuyez sur Vérifier.</string>
     <string name="crowns_howto_example">Grille d\'exemple</string>
 </resources>

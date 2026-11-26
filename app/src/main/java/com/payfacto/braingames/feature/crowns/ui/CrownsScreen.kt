@@ -128,7 +128,7 @@ fun CrownsScreen(
                     board = state.board,
                     highlights = CrownsGridHighlights(
                         conflictCells = state.conflictCells,
-                        errorCells = state.errorCells,
+                        errorCells = state.errorCells + state.wrongCrowns,
                         hintCells = state.hint?.cells.orEmpty(),
                         hintAreaCells = state.hint?.areaCells.orEmpty()
                     ),
@@ -148,12 +148,14 @@ fun CrownsScreen(
             }
         }
         val status: @Composable () -> Unit = {
+            val crowns = stringResource(R.string.crowns_placed, state.crownCount, state.puzzle?.size ?: 0)
+            val mode = if (isClassic) {
+                stringResource(R.string.hints_remaining, session.hintsRemaining)
+            } else {
+                stringResource(R.string.mode_hardcore_label)
+            }
             Text(
-                text = if (isClassic) {
-                    stringResource(R.string.hints_remaining, session.hintsRemaining)
-                } else {
-                    stringResource(R.string.mode_hardcore_label)
-                },
+                text = "$crowns · $mode",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -10,9 +10,9 @@ Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
    - Move the 3 hard-coded French strings in `WordSearchScreen` to `strings.xml`; Hidden Word picks its content language from the app locale, not the Application context.
    - Remove the unwinnable Kakuro puzzle `e_02` from `kakuro_easy.json`.
    - Check on an Android 13+ device and an Android ≤ 12 emulator: switch, rotate, kill and reopen, system per-app language setting.
-3. **Crowns additions**
+3. ✅ **Crowns additions** (unit-tested; not yet checked on a device)
    - A "crowns placed / total" counter, in both modes.
-   - Classic only: a crown that is not part of the solution is marked as wrong, and each one revealed costs one hint.
+   - Classic only: a crown that is not part of the solution is marked as wrong, and each one revealed costs one hint. Done automatically as the crown is placed, while hints last; a cell is charged only once per puzzle, and the hint button leaves crowns already shown as wrong to the player.
    - Hardcore unchanged.
 4. **Fix Kakuro difficulty** (~3–5 days): the current 13 puzzles can't be re-graded (only 3 have a unique solution), so replace them.
    - Offline generator: layout with target density, digit filler, clues from the fill, uniqueness check (stop at 2 solutions).

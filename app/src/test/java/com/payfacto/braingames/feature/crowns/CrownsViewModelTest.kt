@@ -176,15 +176,144 @@ class CrownsViewModelTest {
         assertEquals(GameSession.DEFAULT_HINTS - 1, viewModel.session.value.hintsRemaining)
     }
 
+    // ── Classic: wrong crowns ───────────────────────────────────────────────
+    // Solution "02413": (4,4), (0,1), (0,2), (0,3), (0,4) and (1,0) are all wrong crowns.
+
     @Test
-    fun `a hint first removes a wrong crown`() = runTest(mainDispatcher.dispatcher) {
+    fun `a wrong crown is shown at once and uses one hint`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+
+        viewModel.placeCrown(cell(4, 4))
+
+        val state = viewModel.state.value
+        assertEquals(CellMark.CROWN, state.board[cell(4, 4)])
+        assertEquals(setOf(cell(4, 4)), state.wrongCrowns)
+        assertEquals(GameSession.DEFAULT_HINTS - 1, viewModel.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `a shown wrong crown explains the hint it used`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+
+        viewModel.placeCrown(cell(4, 4))
+
+        assertEquals(CrownsHint.WrongMark(cell(4, 4), CellMark.CROWN), viewModel.state.value.hint!!.hint)
+    }
+
+    @Test
+    fun `a right crown uses no hint`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+
+        viewModel.placeCrown(cell(0, 0))
+
+        assertEquals(emptySet<Int>(), viewModel.state.value.wrongCrowns)
+        assertEquals(GameSession.DEFAULT_HINTS, viewModel.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `a wrong crown placed again on the same cell uses no second hint`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.setMark(cell(4, 4), CellMark.CROWN)
+        viewModel.setMark(cell(4, 4), CellMark.EMPTY)
+
+        viewModel.setMark(cell(4, 4), CellMark.CROWN)
+
+        assertEquals(setOf(cell(4, 4)), viewModel.state.value.wrongCrowns)
+        assertEquals(GameSession.DEFAULT_HINTS - 1, viewModel.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `undo bringing back a wrong crown uses no second hint`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.setMark(cell(4, 4), CellMark.CROWN)
+        viewModel.setMark(cell(4, 4), CellMark.EMPTY)
+
+        viewModel.undo()
+
+        assertEquals(setOf(cell(4, 4)), viewModel.state.value.wrongCrowns)
+        assertEquals(GameSession.DEFAULT_HINTS - 1, viewModel.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `a removed wrong crown is no longer shown`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.setMark(cell(4, 4), CellMark.CROWN)
+
+        viewModel.setMark(cell(4, 4), CellMark.EMPTY)
+
+        assertEquals(emptySet<Int>(), viewModel.state.value.wrongCrowns)
+    }
+
+    @Test
+    fun `with no hints left a wrong crown is not shown`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        val wrong = listOf(cell(4, 4), cell(0, 1), cell(0, 2), cell(0, 3), cell(0, 4), cell(1, 0))
+
+        wrong.forEach { viewModel.setMark(it, CellMark.CROWN) }
+
+        assertEquals(wrong.take(GameSession.DEFAULT_HINTS).toSet(), viewModel.state.value.wrongCrowns)
+        assertEquals(0, viewModel.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `a hint leaves a crown already shown as wrong to the player`() = runTest(mainDispatcher.dispatcher) {
         val viewModel = classic()
         viewModel.placeCrown(cell(4, 4))
 
         viewModel.useHint()
 
-        assertEquals(CellMark.EMPTY, viewModel.state.value.board[cell(4, 4)])
-        assertEquals(CrownsHint.WrongMark(cell(4, 4), CellMark.CROWN), viewModel.state.value.hint!!.hint)
+        val state = viewModel.state.value
+        assertEquals(CellMark.CROWN, state.board[cell(4, 4)])
+        assertTrue(state.hint!!.hint is CrownsHint.Deduction)
+        assertEquals(GameSession.DEFAULT_HINTS - 2, viewModel.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `shown wrong crowns survive recreation without another hint`() = runTest(mainDispatcher.dispatcher) {
+        val fixture = Fixture(GameMode.CLASSIC)
+        with(fixture) { newViewModel() }.placeCrown(cell(4, 4))
+
+        val recreated = with(fixture) { newViewModel() }
+        recreated.setMark(cell(4, 4), CellMark.EMPTY)
+        recreated.setMark(cell(4, 4), CellMark.CROWN)
+
+        assertEquals(setOf(cell(4, 4)), recreated.state.value.wrongCrowns)
+        assertEquals(GameSession.DEFAULT_HINTS - 1, recreated.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `a new puzzle forgets the shown wrong crowns`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = classic()
+        viewModel.placeCrown(cell(4, 4))
+
+        viewModel.newPuzzle()
+        advanceUntilIdle()
+        viewModel.placeCrown(cell(4, 4))
+
+        assertEquals(setOf(cell(4, 4)), viewModel.state.value.wrongCrowns)
+        assertEquals(GameSession.DEFAULT_HINTS - 1, viewModel.session.value.hintsRemaining)
+    }
+
+    @Test
+    fun `hardcore never shows wrong crowns nor uses hints`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = hardcore()
+
+        viewModel.placeCrown(cell(4, 4))
+
+        assertEquals(emptySet<Int>(), viewModel.state.value.wrongCrowns)
+        assertNull(viewModel.state.value.hint)
+    }
+
+    // ── Crown counter ───────────────────────────────────────────────────────
+
+    @Test
+    fun `the counter counts every crown on the board, right or wrong`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = hardcore()
+
+        viewModel.placeCrown(cell(0, 0))
+        viewModel.placeCrown(cell(4, 4))
+
+        assertEquals(2, viewModel.state.value.crownCount)
     }
 
     @Test

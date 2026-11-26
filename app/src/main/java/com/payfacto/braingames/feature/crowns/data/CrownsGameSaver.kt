@@ -17,6 +17,7 @@ internal object CrownsGameSaver {
     private const val KEY_MARKS = "crowns_marks"
     private const val KEY_UNDO = "crowns_undo"
     private const val KEY_QUESTION_MODE = "crowns_question_mode"
+    private const val KEY_REVEALED_WRONG = "crowns_revealed_wrong"
 
     private val marks = CellMark.entries
 
@@ -32,6 +33,11 @@ internal object CrownsGameSaver {
 
     fun saveUndo(handle: SavedStateHandle, boards: List<CrownsBoard>) {
         handle[KEY_UNDO] = boards.flatMap { it.marks.map(CellMark::ordinal) }.toIntArray()
+    }
+
+    /** Classic: cells already shown as wrong crowns, so they are never charged a hint twice. */
+    fun saveRevealedWrong(handle: SavedStateHandle, cells: Set<Int>) {
+        handle[KEY_REVEALED_WRONG] = cells.sorted().toIntArray()
     }
 
     fun saveQuestionMode(handle: SavedStateHandle, enabled: Boolean) {
@@ -55,10 +61,13 @@ internal object CrownsGameSaver {
         return data.toList().chunked(cells).map { decode(size, it) }
     }
 
+    fun restoreRevealedWrong(handle: SavedStateHandle): Set<Int> =
+        handle.get<IntArray>(KEY_REVEALED_WRONG)?.toSet().orEmpty()
+
     fun restoreQuestionMode(handle: SavedStateHandle): Boolean = handle[KEY_QUESTION_MODE] ?: false
 
     fun clear(handle: SavedStateHandle) {
-        listOf(KEY_SIZE, KEY_REGIONS, KEY_SOLUTION, KEY_MARKS, KEY_UNDO).forEach { handle.remove<Any>(it) }
+        listOf(KEY_SIZE, KEY_REGIONS, KEY_SOLUTION, KEY_MARKS, KEY_UNDO, KEY_REVEALED_WRONG).forEach { handle.remove<Any>(it) }
     }
 
     private fun CrownsBoard.encode(): IntArray = marks.map(CellMark::ordinal).toIntArray()
