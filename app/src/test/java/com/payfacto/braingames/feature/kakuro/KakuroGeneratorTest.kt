@@ -16,7 +16,7 @@ class KakuroGeneratorTest {
 
     @Test
     fun `generated puzzles are good at every difficulty`() {
-        Difficulty.entries.forEach { difficulty ->
+        Difficulty.STANDARD.forEach { difficulty ->
             val generator = KakuroGenerator(Random(difficulty.ordinal.toLong()))
             val rules = KakuroDifficulty.rulesFor(difficulty)
             var checked = 0

@@ -31,7 +31,7 @@ class StatsSectionsTest {
     @Test
     fun `every level has a row, zero when never played`() {
         val classic = sudoku.modes.getValue(GameMode.CLASSIC).byDifficulty
-        assertEquals(Difficulty.entries, classic.keys.toList())
+        assertEquals(Difficulty.STANDARD, classic.keys.toList())
         assertEquals(GameStats(), classic.getValue(Difficulty.MEDIUM))
     }
 

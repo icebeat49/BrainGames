@@ -1,6 +1,6 @@
 package com.payfacto.braingames.feature.crowns
 
-import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.data.CrownsBankFormat
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.crowns.engine.CrownsGenerator
@@ -10,18 +10,19 @@ import org.junit.Test
 import kotlin.random.Random
 
 /**
- * Regenerates the bundled bank (res/raw/crowns_bank_<size>.txt). Not part of the normal run:
- * remove @Ignore, run this test alone (a few minutes), restore @Ignore. CrownsBankTest then
- * re-verifies every puzzle written.
+ * Writes the bundled bank (res/raw/crowns_bank_<size>.txt) for every size that has none yet:
+ * delete a file to regenerate it. Not part of the normal run: remove @Ignore, run this test
+ * alone (a few minutes per size), restore @Ignore. CrownsBankTest then re-verifies every puzzle.
  */
 class CrownsBankWriter {
 
-    @Ignore("Run manually to regenerate the bundled bank")
+    @Ignore("Run manually to write missing banks")
     @Test
     fun writeBank() {
         val report = StringBuilder("\nCrowns bank generation\n")
-        Difficulty.entries.forEach { difficulty ->
+        GameType.CROWNS.levels.forEach { difficulty ->
             val size = CrownsDifficulty.sizeFor(difficulty)
+            if (CrownsBankFiles.file(size).exists() && CrownsBankFiles.load(size).isNotEmpty()) return@forEach
             val generator = CrownsGenerator(Random(BANK_SEED + size))
             val puzzles = LinkedHashSet<CrownsPuzzle>()
             val start = System.nanoTime()

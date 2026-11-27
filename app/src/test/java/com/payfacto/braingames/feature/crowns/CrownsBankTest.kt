@@ -1,6 +1,6 @@
 package com.payfacto.braingames.feature.crowns
 
-import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.CrownsGeneratorTest.Companion.assertPuzzleIsGood
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.crowns.engine.CrownsGenerationRules
@@ -14,7 +14,7 @@ class CrownsBankTest {
 
     @Test
     fun `each size ships 250 distinct puzzles`() {
-        Difficulty.entries.forEach { difficulty ->
+        GameType.CROWNS.levels.forEach { difficulty ->
             val puzzles = CrownsBankFiles.load(CrownsDifficulty.sizeFor(difficulty))
             assertEquals("$difficulty count", BANK_SIZE, puzzles.size)
             assertEquals("$difficulty distinct", BANK_SIZE, puzzles.toSet().size)
@@ -23,7 +23,7 @@ class CrownsBankTest {
 
     @Test
     fun `every bundled puzzle is valid, unique, logically solvable, at its difficulty and within its region rules`() {
-        Difficulty.entries.forEach { difficulty ->
+        GameType.CROWNS.levels.forEach { difficulty ->
             val size = CrownsDifficulty.sizeFor(difficulty)
             CrownsBankFiles.load(size).forEachIndexed { index, puzzle ->
                 assertPuzzleIsGood(puzzle, difficulty, "bank ${size}x$size #$index")
@@ -33,7 +33,7 @@ class CrownsBankTest {
 
     @Test
     fun `the bank has single-cell regions at the target frequency`() {
-        Difficulty.entries.forEach { difficulty ->
+        GameType.CROWNS.levels.forEach { difficulty ->
             val puzzles = CrownsBankFiles.load(CrownsDifficulty.sizeFor(difficulty))
             val withSingleCell = puzzles.count { puzzle -> puzzle.regionCells.any { it.size == 1 } }
             val frequency = withSingleCell.toDouble() / puzzles.size

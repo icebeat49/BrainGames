@@ -12,7 +12,7 @@ class KakuroBankTest {
 
     @Test
     fun `each size ships 250 distinct puzzles`() {
-        Difficulty.entries.forEach { difficulty ->
+        Difficulty.STANDARD.forEach { difficulty ->
             val puzzles = KakuroBankFiles.load(KakuroDifficulty.sizeFor(difficulty))
             assertEquals("$difficulty count", BANK_SIZE, puzzles.size)
             assertEquals("$difficulty distinct", BANK_SIZE, puzzles.toSet().size)
@@ -21,7 +21,7 @@ class KakuroBankTest {
 
     @Test
     fun `every bundled puzzle is valid, unique, solvable by logic and at its difficulty`() {
-        Difficulty.entries.forEach { difficulty ->
+        Difficulty.STANDARD.forEach { difficulty ->
             val size = KakuroDifficulty.sizeFor(difficulty)
             KakuroBankFiles.load(size).forEachIndexed { index, puzzle ->
                 assertPuzzleIsGood(puzzle, difficulty, "bank ${size}x$size #$index")

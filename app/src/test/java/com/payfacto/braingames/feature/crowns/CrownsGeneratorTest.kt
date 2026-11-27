@@ -1,6 +1,7 @@
 package com.payfacto.braingames.feature.crowns
 
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.crowns.engine.CrownsGenerationRules
 import com.payfacto.braingames.feature.crowns.engine.CrownsGenerator
@@ -21,12 +22,12 @@ class CrownsGeneratorTest {
     fun `generated puzzles follow every rule, with single-cell regions at the target frequency`() {
         warmUp()
         val report = StringBuilder(
-            "\nCrowns generation, $PUZZLES_PER_DIFFICULTY puzzles per difficulty (JVM, after warm-up)\n"
+            "\nCrowns generation, $PUZZLES_PER_DIFFICULTY puzzles per difficulty, $MASTER_PUZZLES for Master (JVM, after warm-up)\n"
         )
         val failuresByDifficulty = mutableMapOf<Difficulty, Int>()
         val frequencyMisses = mutableListOf<String>()
 
-        for (difficulty in Difficulty.entries) {
+        for (difficulty in GameType.CROWNS.levels) {
             val stats = sample(difficulty)
             failuresByDifficulty[difficulty] = stats.failures
             report.append(stats.reportLine())
@@ -43,7 +44,7 @@ class CrownsGeneratorTest {
     private fun sample(difficulty: Difficulty): SampleStats {
         val generator = CrownsGenerator(Random(SEED + difficulty.ordinal))
         val stats = SampleStats(difficulty)
-        repeat(PUZZLES_PER_DIFFICULTY) { index ->
+        repeat(if (difficulty == Difficulty.MASTER) MASTER_PUZZLES else PUZZLES_PER_DIFFICULTY) { index ->
             val start = System.nanoTime()
             val puzzle = generator.generate(difficulty)
             stats.timesMs += (System.nanoTime() - start) / 1_000_000.0
@@ -105,11 +106,14 @@ class CrownsGeneratorTest {
 
     private fun warmUp() {
         val generator = CrownsGenerator(Random(1))
-        Difficulty.entries.forEach { difficulty -> repeat(WARM_UP_ROUNDS) { generator.generate(difficulty) } }
+        Difficulty.STANDARD.forEach { difficulty -> repeat(WARM_UP_ROUNDS) { generator.generate(difficulty) } }
     }
 
     companion object {
         const val PUZZLES_PER_DIFFICULTY = 200
+
+        /** 12×12 takes ~2 s per puzzle: a smaller sample keeps the run short. CrownsBankTest checks every bundled one. */
+        private const val MASTER_PUZZLES = 20
         private const val FREQUENCY_TOLERANCE = 0.10
         private const val WARM_UP_ROUNDS = 5
         private const val SEED = 20261123L

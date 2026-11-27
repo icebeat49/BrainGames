@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 /**
  * The bundled, pre-verified puzzles for each grid size, read once from res/raw. Generated
- * offline by CrownsBankWriter (unit tests) because 10×10 and 11×11 are too slow to generate
+ * offline by CrownsBankWriter (unit tests) because the larger grids are too slow to generate
  * on a phone; CrownsBankTest re-verifies every puzzle.
  */
 @Singleton
@@ -31,6 +31,7 @@ class CrownsPuzzleBank @Inject constructor(
         9 -> R.raw.crowns_bank_9
         10 -> R.raw.crowns_bank_10
         11 -> R.raw.crowns_bank_11
+        12 -> R.raw.crowns_bank_12
         else -> error("No Crowns bank for size $size")
     }
 }

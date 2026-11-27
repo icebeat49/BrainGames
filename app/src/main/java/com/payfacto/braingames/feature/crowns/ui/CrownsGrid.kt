@@ -16,7 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -168,20 +170,26 @@ private fun GridCanvas(
         remember(palette, colors.error) { crownVector(fill = colors.error, outline = palette.pieceOutline) }
     )
     val textMeasurer = rememberTextMeasurer()
-    val questionStyle = TextStyle(color = colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+    val questionStyle = TextStyle(color = palette.mark, fontWeight = FontWeight.Bold, fontSize = 20.sp)
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val n = puzzle.size
         val geometry = GridGeometry(size.width, size.height, n, n)
         val cellSize = Size(geometry.cellWidth, geometry.cellHeight)
         fun topLeft(cell: Int) = Offset(geometry.cellLeft(cell), geometry.cellTop(cell))
+        val corner = CornerRadius(cellSize.minDimension * TILE_CORNER)
+        fun drawTile(cell: Int, color: Color) {
+            val tile = tileRect(geometry, cell)
+            drawRoundRect(color, tile.topLeft, tile.size, corner)
+        }
 
+        drawRoundRect(palette.board, cornerRadius = CornerRadius(cellSize.minDimension * BOARD_CORNER))
         for (cell in 0 until puzzle.cellCount) {
-            drawRect(palette.fillFor(puzzle.regionOf(cell)), topLeft(cell), cellSize)
+            drawTile(cell, palette.fillFor(puzzle.regionOf(cell)))
             when (cell) {
-                in highlights.errorCells -> drawRect(colors.error.copy(alpha = 0.35f), topLeft(cell), cellSize)
-                in highlights.hintCells -> drawRect(colors.primary.copy(alpha = 0.35f), topLeft(cell), cellSize)
-                in highlights.hintAreaCells -> drawRect(colors.primary.copy(alpha = 0.15f), topLeft(cell), cellSize)
+                in highlights.errorCells -> drawTile(cell, colors.error.copy(alpha = 0.45f))
+                in highlights.hintCells -> drawTile(cell, colors.primary.copy(alpha = 0.45f))
+                in highlights.hintAreaCells -> drawTile(cell, colors.primary.copy(alpha = 0.2f))
             }
         }
 
@@ -202,9 +210,9 @@ private fun GridCanvas(
             }
             when (board[cell]) {
                 CellMark.EMPTY -> Unit
-                CellMark.CROSS -> drawCross(origin, cellSize, colors.onSurface.copy(alpha = 0.75f))
+                CellMark.CROSS -> drawCross(origin, cellSize, palette.mark.copy(alpha = 0.8f))
                 CellMark.QUESTION -> {
-                    // 60% of the cell: still clearly readable on ~27dp cells (11×11 on a small phone).
+                    // 60% of the cell: still clearly readable on ~29dp cells (12×12 on a small phone).
                     val layout = textMeasurer.measure("?", questionStyle.copy(fontSize = (cellSize.height * 0.6f).toSp()))
                     drawText(
                         layout,
@@ -219,17 +227,17 @@ private fun GridCanvas(
             // A crown just removed fades out over whatever the cell holds now.
             if (board[cell] != CellMark.CROWN && transition != null) drawCrown(transition)
             if (cell in highlights.conflictCells) {
-                val inset = cellSize.minDimension * 0.06f
-                drawRect(
+                val tile = tileRect(geometry, cell)
+                val stroke = 2.5.dp.toPx()
+                drawRoundRect(
                     color = colors.error,
-                    topLeft = origin + Offset(inset, inset),
-                    size = Size(cellSize.width - 2 * inset, cellSize.height - 2 * inset),
-                    style = Stroke(width = 2.dp.toPx())
+                    topLeft = tile.topLeft + Offset(stroke / 2, stroke / 2),
+                    size = Size(tile.width - stroke, tile.height - stroke),
+                    cornerRadius = corner,
+                    style = Stroke(width = stroke)
                 )
             }
         }
-
-        drawRegionLines(puzzle, geometry, colors.onSurface)
 
         val glow = winGlow()
         if (glow > 0f) {
@@ -251,31 +259,18 @@ private fun DrawScope.drawCross(origin: Offset, cell: Size, color: Color) {
     drawLine(color, origin + Offset(cell.width - inset, inset), origin + Offset(inset, cell.height - inset), stroke)
 }
 
-/** Thin lines inside a region, thick lines between regions and around the grid. */
-private fun DrawScope.drawRegionLines(puzzle: CrownsPuzzle, geometry: GridGeometry, color: Color) {
-    val n = puzzle.size
-    val thin = 1.dp.toPx()
-    val thick = 3.dp.toPx()
-    val thinColor = color.copy(alpha = 0.25f)
-    val edges = mutableListOf<Triple<Offset, Offset, Boolean>>() // start, end, thick?
-
-    for (row in 0 until n) for (col in 0 until n) {
-        val cell = puzzle.cellAt(row, col)
-        val x = geometry.cellLeft(cell)
-        val y = geometry.cellTop(cell)
-        if (col < n - 1) {
-            val border = puzzle.regionOf(cell) != puzzle.regionOf(cell + 1)
-            edges += Triple(Offset(x + geometry.cellWidth, y), Offset(x + geometry.cellWidth, y + geometry.cellHeight), border)
-        }
-        if (row < n - 1) {
-            val border = puzzle.regionOf(cell) != puzzle.regionOf(cell + n)
-            edges += Triple(Offset(x, y + geometry.cellHeight), Offset(x + geometry.cellWidth, y + geometry.cellHeight), border)
-        }
-    }
-    edges.filterNot { it.third }.forEach { (start, end) -> drawLine(thinColor, start, end, thin) }
-    edges.filter { it.third }.forEach { (start, end) -> drawLine(color, start, end, thick) }
-    drawRect(color, style = Stroke(width = thick))
+/** A cell's tile: a rounded square, with the same small gap all around it. */
+private fun tileRect(geometry: GridGeometry, cell: Int): Rect {
+    val inset = minOf(geometry.cellWidth, geometry.cellHeight) * TILE_GAP / 2f
+    val left = geometry.cellLeft(cell)
+    val top = geometry.cellTop(cell)
+    return Rect(left + inset, top + inset, left + geometry.cellWidth - inset, top + geometry.cellHeight - inset)
 }
+
+/** Gap between tiles and tile and board corners, as fractions of a cell. */
+private const val TILE_GAP = 0.07f
+private const val TILE_CORNER = 0.16f
+private const val BOARD_CORNER = 0.2f
 
 /** Invisible cells on top of the canvas carrying TalkBack descriptions and actions. */
 @Composable

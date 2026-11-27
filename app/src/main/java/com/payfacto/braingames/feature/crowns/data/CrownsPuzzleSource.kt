@@ -16,7 +16,7 @@ interface CrownsPuzzleSource {
 
 /**
  * Serves puzzles from the bundled bank, at random but never one of the recent ones for that
- * size. Instant on any phone, unlike generating 10×10 or 11×11 puzzles on the device.
+ * size. Instant on any phone, unlike generating the larger grids on the device.
  */
 class BundledCrownsPuzzleSource @Inject constructor(
     private val bank: CrownsPuzzleBank,

@@ -11,6 +11,7 @@ object CrownsDifficulty {
         Difficulty.MEDIUM    -> 9
         Difficulty.HARD      -> 10
         Difficulty.EXPERT    -> 11
+        Difficulty.MASTER    -> 12
     }
 
     /**
@@ -23,7 +24,7 @@ object CrownsDifficulty {
         return when (difficulty) {
             Difficulty.VERY_EASY, Difficulty.EASY -> level <= Technique.CONFINED_AREA
             Difficulty.MEDIUM -> true
-            Difficulty.HARD, Difficulty.EXPERT -> level >= Technique.NEIGHBOUR_ELIMINATION
+            Difficulty.HARD, Difficulty.EXPERT, Difficulty.MASTER -> level >= Technique.NEIGHBOUR_ELIMINATION
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.payfacto.braingames.feature.crowns
 
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.CrownsTestGrids.uniqueFiveByFive
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.crowns.engine.CrownsGenerator
@@ -92,7 +93,7 @@ class CrownsHintEngineTest {
 
     @Test
     fun `following hints solves bundled bank puzzles of every size`() {
-        Difficulty.entries.forEach { difficulty ->
+        GameType.CROWNS.levels.forEach { difficulty ->
             val size = CrownsDifficulty.sizeFor(difficulty)
             CrownsBankFiles.load(size).take(BANK_SAMPLE_PER_SIZE).forEachIndexed { i, p ->
                 assertHintsSolve(p, CrownsBoard.empty(p.size), "bank ${size}x$size #$i")
@@ -102,7 +103,7 @@ class CrownsHintEngineTest {
 
     @Test
     fun `following hints solves generated puzzles of every difficulty`() {
-        Difficulty.entries.forEach { difficulty ->
+        GameType.CROWNS.levels.forEach { difficulty ->
             val generator = CrownsGenerator(Random(500L + difficulty.ordinal))
             repeat(GENERATED_PER_DIFFICULTY) { i ->
                 val p = checkNotNull(generator.generate(difficulty))

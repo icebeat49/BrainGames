@@ -21,7 +21,7 @@ class KakuroBankWriter {
     @Test
     fun writeBank() {
         val report = StringBuilder("\nKakuro bank generation\n")
-        Difficulty.entries.forEach { difficulty ->
+        Difficulty.STANDARD.forEach { difficulty ->
             val rules = KakuroDifficulty.rulesFor(difficulty)
             val seed = BANK_SEED + rules.size
             val generator = KakuroGenerator(Random(seed))

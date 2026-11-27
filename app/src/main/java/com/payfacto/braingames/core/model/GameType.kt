@@ -1,8 +1,9 @@
 package com.payfacto.braingames.core.model
 
-enum class GameType {
+/** The games, with the levels each one offers, easiest first. */
+enum class GameType(val levels: List<Difficulty> = Difficulty.STANDARD) {
     SUDOKU,
     KAKURO,
     WORD_SEARCH,
-    CROWNS
+    CROWNS(Difficulty.STANDARD + Difficulty.MASTER)
 }

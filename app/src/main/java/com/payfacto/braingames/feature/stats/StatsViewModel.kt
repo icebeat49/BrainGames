@@ -57,7 +57,7 @@ class StatsViewModel @Inject constructor(
             games.map { game ->
                 val modes = if (GameCatalog.infoFor(game).supportsModes) GameMode.entries else listOf(GameMode.CLASSIC)
                 val byMode = modes.associateWith { mode ->
-                    val byDifficulty = Difficulty.entries.associateWith { difficulty ->
+                    val byDifficulty = game.levels.associateWith { difficulty ->
                         recorded[StatsKey(game, difficulty, mode)] ?: GameStats()
                     }
                     ModeStats(byDifficulty, byDifficulty.values.fold(GameStats(), GameStats::plus))

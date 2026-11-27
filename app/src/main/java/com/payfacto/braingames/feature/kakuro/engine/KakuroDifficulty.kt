@@ -15,7 +15,7 @@ object KakuroDifficulty {
         Difficulty.EASY      -> 7
         Difficulty.MEDIUM    -> 8
         Difficulty.HARD      -> 9
-        Difficulty.EXPERT    -> 10
+        Difficulty.EXPERT, Difficulty.MASTER -> 10
     }
 
     fun rulesFor(difficulty: Difficulty): KakuroGenerationRules {
@@ -25,7 +25,7 @@ object KakuroDifficulty {
             Difficulty.EASY      -> 0.65..0.80
             Difficulty.MEDIUM    -> 0.60..0.75
             Difficulty.HARD      -> 0.58..0.72
-            Difficulty.EXPERT    -> 0.55..0.70
+            Difficulty.EXPERT, Difficulty.MASTER -> 0.55..0.70
         }
         return KakuroGenerationRules(size, whiteShare, maxRunLength = minOf(MAX_RUN, size - 1))
     }
@@ -43,7 +43,7 @@ object KakuroDifficulty {
             Difficulty.EASY      -> trials == 0 && permutations <= 3
             Difficulty.MEDIUM    -> trials == 0 && permutations >= 2
             Difficulty.HARD      -> trials >= 1
-            Difficulty.EXPERT    -> trials >= 2
+            Difficulty.EXPERT, Difficulty.MASTER -> trials >= 2
         }
     }
 

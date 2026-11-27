@@ -1,6 +1,6 @@
 package com.payfacto.braingames.core.theme
 
-import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
@@ -11,7 +11,7 @@ import org.junit.Test
 
 class RegionPaletteTest {
 
-    private val largestGrid = Difficulty.entries.maxOf(CrownsDifficulty::sizeFor)
+    private val largestGrid = GameType.CROWNS.levels.maxOf(CrownsDifficulty::sizeFor)
 
     @Test
     fun `each palette gives every region of the largest grid its own colour`() {
@@ -36,11 +36,11 @@ class RegionPaletteTest {
     }
 
     @Test
-    fun `marks, borders and crowns contrast with every region colour in every theme`() {
+    fun `marks and crowns contrast with every region colour in every theme`() {
         allSchemes().forEach { (label, scheme) ->
             val palette = regionPaletteFor(scheme)
             palette.fills.take(largestGrid).forEachIndexed { index, fill ->
-                assertTrue("$label region $index: marks", contrast(scheme.onSurface, fill) >= MIN_GRAPHIC_CONTRAST)
+                assertTrue("$label region $index: marks", contrast(palette.mark, fill) >= MIN_GRAPHIC_CONTRAST)
                 assertTrue("$label region $index: crown", contrast(palette.pieceFill, fill) >= MIN_GRAPHIC_CONTRAST)
             }
             assertTrue("$label: crown rim", contrast(palette.pieceFill, palette.pieceOutline) >= MIN_GRAPHIC_CONTRAST)

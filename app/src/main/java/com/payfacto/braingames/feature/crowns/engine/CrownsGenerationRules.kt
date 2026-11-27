@@ -47,7 +47,7 @@ object CrownsGenerationRules {
             MEDIUM_SINGLE_CELL_CHANCE, MEDIUM_MAX_TWO_CELL_REGIONS, MEDIUM_MAX_IMMEDIATE_CROWNS
         )
         Difficulty.HARD -> RegionRules(HARD_SINGLE_CELL_CHANCE, HARD_MAX_TWO_CELL_REGIONS, HARD_MAX_IMMEDIATE_CROWNS)
-        Difficulty.EXPERT -> RegionRules(
+        Difficulty.EXPERT, Difficulty.MASTER -> RegionRules(
             EXPERT_SINGLE_CELL_CHANCE, EXPERT_MAX_TWO_CELL_REGIONS, EXPERT_MAX_IMMEDIATE_CROWNS
         )
     }

@@ -7,19 +7,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import com.payfacto.braingames.feature.crowns.CrownsUiState
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -45,10 +45,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +62,7 @@ import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.CheckFailedDialog
 import com.payfacto.braingames.core.ui.components.GameTopBar
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
+import com.payfacto.braingames.feature.crowns.CrownsUiState
 import com.payfacto.braingames.feature.crowns.CrownsViewModel
 
 @Composable
@@ -117,8 +118,8 @@ fun CrownsScreen(
         }
     ) { padding ->
       BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
-        // The grid keeps clear of the system back-gesture zones: a drag starting in the first
-        // or last column would otherwise leave the game on phones with gesture navigation.
+        // In landscape the grid keeps clear of the system back-gesture zones: a drag starting in
+        // the first or last column would otherwise leave the game on phones with gesture navigation.
         val sideMargin = gridSideMargin()
         val board: @Composable (Dp) -> Unit = { side ->
             val puzzle = state.puzzle
@@ -140,7 +141,9 @@ fun CrownsScreen(
                         onDragEnd = viewModel::onDragEnd,
                         onSetMark = viewModel::setMark
                     ),
-                    modifier = Modifier.size(side),
+                    // Asks Android not to treat a drag from the first or last column as Back. It honours
+                    // this for up to 200dp of height per edge, the bottom-most part of the grid.
+                    modifier = Modifier.size(side).systemGestureExclusion(),
                     winGlow = { winGlow.value }
                 )
             } else {
@@ -197,13 +200,13 @@ fun CrownsScreen(
                 }
             }
         } else {
-            // Portrait: grid on top, controls below; the column scrolls if they don't fit.
-            val gridSide = minOf(maxWidth - sideMargin * 2, maxHeight * PORTRAIT_GRID_SHARE, MAX_GRID_SIDE)
+            // Portrait: grid on top, nearly edge to edge, controls below; the column scrolls if they don't fit.
+            val gridSide = minOf(maxWidth - PORTRAIT_EDGE_MARGIN * 2, maxHeight * PORTRAIT_GRID_SHARE, MAX_GRID_SIDE)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(SCREEN_PADDING),
+                    .padding(horizontal = PORTRAIT_EDGE_MARGIN, vertical = SCREEN_PADDING),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 status()
@@ -274,6 +277,9 @@ fun CrownsScreen(
 }
 
 private val SCREEN_PADDING = 12.dp
+
+/** Space on each side of the grid in portrait: just enough that the board doesn't touch the screen edge. */
+private val PORTRAIT_EDGE_MARGIN = 4.dp
 
 /** A grid larger than this (tablets) only makes cells huge: cap it. */
 private val MAX_GRID_SIDE = 560.dp

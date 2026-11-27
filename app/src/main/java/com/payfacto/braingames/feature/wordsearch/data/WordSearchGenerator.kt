@@ -18,7 +18,7 @@ object WordSearchGenerator {
         Difficulty.EASY      -> 10
         Difficulty.MEDIUM    -> 12
         Difficulty.HARD      -> 14
-        Difficulty.EXPERT    -> 16
+        Difficulty.EXPERT, Difficulty.MASTER -> 16
     }
 
     /**

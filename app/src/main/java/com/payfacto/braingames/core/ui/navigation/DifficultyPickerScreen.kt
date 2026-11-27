@@ -1,12 +1,16 @@
 package com.payfacto.braingames.core.ui.navigation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -39,8 +43,8 @@ import com.payfacto.braingames.R
 import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
-import com.payfacto.braingames.core.ui.GameCatalog
 import com.payfacto.braingames.core.save.GameSave
+import com.payfacto.braingames.core.ui.GameCatalog
 import com.payfacto.braingames.core.ui.GameInfo
 import com.payfacto.braingames.core.ui.components.formatElapsed
 
@@ -79,10 +83,14 @@ fun DifficultyPickerScreen(
             )
         }
     ) { padding ->
+        // Scrolls when Continue, the mode choice and six levels (Crowns) don't fit, and stays
+        // centred when they do.
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = maxHeight)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -100,7 +108,7 @@ fun DifficultyPickerScreen(
                 ModeSelector(info, selected = mode, onSelect = viewModel::select)
                 Spacer(Modifier.height(24.dp))
             }
-            Difficulty.entries.forEach { difficulty ->
+            gameType.levels.forEach { difficulty ->
                 val label = difficultyLabel(difficulty, info.gridSize?.invoke(difficulty))
                 val onClick = {
                     if (saved == null) onStart(difficulty, chosenMode, false) else pendingNewGame = difficulty
@@ -115,6 +123,7 @@ fun DifficultyPickerScreen(
                     OutlinedButton(onClick = onClick, modifier = modifier) { Text(label) }
                 }
             }
+        }
         }
     }
 
@@ -209,6 +218,7 @@ private fun difficultyLabel(difficulty: Difficulty, gridSize: Int?): String {
             Difficulty.MEDIUM    -> R.string.difficulty_medium
             Difficulty.HARD      -> R.string.difficulty_hard
             Difficulty.EXPERT    -> R.string.difficulty_expert
+            Difficulty.MASTER    -> R.string.difficulty_master
         }
     )
     return if (gridSize == null) name else stringResource(R.string.difficulty_with_size, name, gridSize)

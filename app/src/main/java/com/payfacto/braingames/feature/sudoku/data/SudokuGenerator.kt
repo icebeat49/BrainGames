@@ -6,7 +6,7 @@ import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
 object SudokuGenerator {
 
     fun generate(difficulty: Difficulty): SudokuBoard {
-        if (difficulty == Difficulty.HARD || difficulty == Difficulty.EXPERT) {
+        if (difficulty >= Difficulty.HARD) {
             repeat(50) {
                 val candidate = generateRaw(difficulty)
                 if (matchesTechniqueLevel(candidate.current, difficulty)) return candidate
@@ -20,7 +20,7 @@ object SudokuGenerator {
         return when (difficulty) {
             Difficulty.HARD ->
                 level.ordinal in TechniqueLevel.NAKED_PAIR.ordinal..TechniqueLevel.HIDDEN_TRIPLE.ordinal
-            Difficulty.EXPERT ->
+            Difficulty.EXPERT, Difficulty.MASTER ->
                 level.ordinal >= TechniqueLevel.X_WING.ordinal
             else -> true
         }
@@ -38,7 +38,7 @@ object SudokuGenerator {
             Difficulty.EASY      -> (40..49).random()
             Difficulty.MEDIUM    -> (32..39).random()
             Difficulty.HARD      -> (26..31).random()
-            Difficulty.EXPERT    -> (20..25).random()
+            Difficulty.EXPERT, Difficulty.MASTER -> (20..25).random()
         }
 
         val indices = (0 until 81).toMutableList().also { it.shuffle() }

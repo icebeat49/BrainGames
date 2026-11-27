@@ -237,4 +237,5 @@ private val Difficulty.labelRes: Int
         Difficulty.MEDIUM -> R.string.difficulty_medium
         Difficulty.HARD -> R.string.difficulty_hard
         Difficulty.EXPERT -> R.string.difficulty_expert
+        Difficulty.MASTER -> R.string.difficulty_master
     }

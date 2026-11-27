@@ -18,6 +18,7 @@
     <string name="difficulty_medium">Moyen</string>
     <string name="difficulty_hard">Difficile</string>
     <string name="difficulty_expert">Expert</string>
+    <string name="difficulty_master">Maître</string>
     <string name="difficulty_select">Choisir un niveau</string>
     <string name="picker_continue">Continuer</string>
     <string name="picker_new_game">Nouvelle partie</string>

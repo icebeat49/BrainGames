@@ -61,6 +61,18 @@ data class KakuroBoard(
         return false
     }
 
+    /**
+     * The cells of the across run and the down run that [row], [col] belongs to, the cell itself
+     * included. Empty when it is not a cell to fill.
+     */
+    fun runCellsThrough(row: Int, col: Int): Set<Pair<Int, Int>> {
+        if (cellAt(row, col) !is KakuroCell.Input) return emptySet()
+        fun isInput(r: Int, c: Int) = r in 0 until rows && c in 0 until cols && cells[r][c] is KakuroCell.Input
+        fun walk(dRow: Int, dCol: Int) = generateSequence(row to col) { (r, c) -> (r + dRow) to (c + dCol) }
+            .takeWhile { (r, c) -> isInput(r, c) }
+        return (walk(0, -1) + walk(0, 1) + walk(-1, 0) + walk(1, 0)).toSet()
+    }
+
     private fun collectAcrossRun(row: Int, startCol: Int): List<Int> {
         val run = mutableListOf<Int>()
         var c = startCol + 1

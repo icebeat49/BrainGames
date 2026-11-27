@@ -34,6 +34,8 @@ Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
    - Reset per game or all, with confirmation.
 7. ✅ **Cleanup pass** (unit-tested; not yet checked on a device)
    - Kakuro dark mode: the grid takes its colours from the theme (blocks, clues, cells, selection, lines) instead of fixed white and dark grey. Sudoku's conflicts use the theme's error colour.
+   - New look, asked for after the device check: Kakuro and Crowns are drawn as rounded tiles on a board (light grey-blue, or dark navy in dark themes), with fixed vivid colours in every colour theme. Kakuro: amber clue tiles, empty blocks, the selected cell in blue and its row and column tinted. Crowns: 12 vivid region colours with dark marks and crowns, the same small gap between every tile (no region lines).
+   - Crowns: a sixth level, Master 12×12 (Crowns only; `GameType.levels`), with its own 250-puzzle bank. In portrait the grid now runs nearly edge to edge (4dp), and asks Android to ignore the back gesture over it (honoured for 200dp of height per edge). The level picker scrolls when its buttons don't fit.
    - Kakuro clue cells (found on the device): the diagonal ran the wrong way and both sums sat on it. Now drawn the usual way: a top-left to bottom-right diagonal, the across sum in the top-right triangle and the down sum in the bottom-left one, clear of the line.
    - Hard-coded text: the back buttons in the level picker and Settings, and the ✕ / ✏ buttons of the number pad, now have labels for screen readers (EN/FR).
    - French Settings: the five colour swatches share the row's width and long names wrap, so "Minuit" is no longer cut off.

@@ -40,7 +40,7 @@ class WordSearchCorrectnessTest {
     fun `generated boards always satisfy verify across every difficulty and puzzle`() {
         var successes = 0
         var total = 0
-        for (difficulty in Difficulty.entries) {
+        for (difficulty in Difficulty.STANDARD) {
             val gridSize = WordSearchGenerator.gridSizeFor(difficulty)
             val maxWordLen = gridSize.coerceAtMost(12)
             for (puzzle in puzzles) {
