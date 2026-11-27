@@ -11,6 +11,7 @@ import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
+import com.payfacto.braingames.testutil.fakeStatsStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -32,9 +33,10 @@ class SudokuViewModelTest {
     private val puzzleSource = RecordingSudokuSource()
     private val preferences = fakePreferencesRepository()
     private val saves = FakeGameSaves()
+    private val stats = fakeStatsStore()
 
     private fun TestScope.newViewModel() =
-        SudokuViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource, saves)
+        SudokuViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource, saves, stats)
 
     /** Plays a value, a hint and two notes, with 3.5 s on the clock, then leaves the screen. */
     private fun TestScope.playSomeMoves(viewModel: SudokuViewModel) {

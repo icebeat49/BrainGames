@@ -23,6 +23,7 @@ import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.FakePreferencesDataStore
 import com.payfacto.braingames.testutil.fakePreferencesRepository
+import com.payfacto.braingames.testutil.fakeStatsStore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -58,6 +59,7 @@ class CrownsViewModelTest {
         private val preferences = fakePreferencesRepository()
         private val motion = MotionSettings { animations }
         val saves = FakeGameSaves()
+        val stats = fakeStatsStore()
         val howToPlay = HowToPlayPreferences(FakePreferencesDataStore()).apply {
             if (howToPlaySeen) runBlocking { markSeen(GameType.CROWNS) }
         }
@@ -65,7 +67,7 @@ class CrownsViewModelTest {
         private val routeMode = mode
 
         fun TestScope.newViewModel() =
-            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource, motion, howToPlay, saves)
+            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource, motion, howToPlay, saves, stats)
                 .also { advanceUntilIdle() }
 
         /** The game opened with Continue after the app was closed: a fresh SavedStateHandle, the same saves. */
@@ -77,7 +79,7 @@ class CrownsViewModelTest {
                     Screen.ARG_RESUME to true
                 )
             )
-            return CrownsViewModel(handle, source, preferences, testScheduler.timeSource, motion, howToPlay, saves)
+            return CrownsViewModel(handle, source, preferences, testScheduler.timeSource, motion, howToPlay, saves, stats)
                 .also { advanceUntilIdle() }
         }
     }

@@ -8,6 +8,9 @@ import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.save.GameSaveRecorder
 import com.payfacto.braingames.core.save.GameSaves
+import com.payfacto.braingames.core.stats.GameStatsRecorder
+import com.payfacto.braingames.core.stats.StatsKey
+import com.payfacto.braingames.core.stats.StatsStore
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
@@ -52,7 +55,8 @@ class SudokuViewModel @Inject constructor(
     private val puzzleSource: SudokuPuzzleSource,
     repository: PreferencesRepository,
     timeSource: TimeSource,
-    saves: GameSaves
+    saves: GameSaves,
+    stats: StatsStore
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
@@ -66,8 +70,11 @@ class SudokuViewModel @Inject constructor(
         timeSource = timeSource
     )
     private val recorder = GameSaveRecorder(
-        GameType.SUDOKU, savedStateHandle, saves, difficulty, mode, SudokuBoardSaver.KEYS
+        GameType.SUDOKU, savedStateHandle, saves, difficulty, mode,
+        SudokuBoardSaver.KEYS + GameStatsRecorder.KEYS
     )
+    private val statsRecorder =
+        GameStatsRecorder(StatsKey(GameType.SUDOKU, difficulty, mode), savedStateHandle, stats)
     private var undoStack = UndoStack<SudokuMove>()
 
     private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty, mode = mode))
@@ -85,6 +92,7 @@ class SudokuViewModel @Inject constructor(
     fun newPuzzle() {
         gameSession.reset()
         recorder.clear()
+        statsRecorder.onNewPuzzle()
         undoStack.clear()
         SudokuBoardSaver.clear(savedStateHandle)
         _state.update {
@@ -235,6 +243,7 @@ class SudokuViewModel @Inject constructor(
         SudokuBoardSaver.save(savedStateHandle, board)
         saveUndo()
         _state.update { it.copy(board = board, canUndo = undoStack.canUndo, errorCells = emptySet()) }
+        statsRecorder.onMove()
         recorder.record()
     }
 
@@ -243,9 +252,10 @@ class SudokuViewModel @Inject constructor(
         if (assists.autoDetectWin && board.isComplete()) win()
     }
 
-    /** A won game is over: its save is deleted. */
+    /** A won game is over: it counts in the stats and its save is deleted. */
     private fun win() {
         gameSession.complete()
+        statsRecorder.onWin(gameSession.elapsedMs)
         recorder.clear()
     }
 

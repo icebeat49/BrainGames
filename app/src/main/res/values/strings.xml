@@ -25,6 +25,22 @@
     <string name="picker_replace_message">Your game in progress will be lost.</string>
     <string name="picker_replace_confirm">Start new game</string>
 
+    <!-- Stats -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_game_summary">%1$d played · %2$d won</string>
+    <string name="stats_level">Level</string>
+    <string name="stats_played">Played</string>
+    <string name="stats_won">Won</string>
+    <string name="stats_best">Best</string>
+    <string name="stats_average">Average</string>
+    <string name="stats_all_levels">All levels</string>
+    <string name="stats_reset_all">Reset all</string>
+    <string name="stats_reset_game">Reset %1$s statistics</string>
+    <string name="stats_reset_game_title">Reset %1$s statistics?</string>
+    <string name="stats_reset_all_title">Reset all statistics?</string>
+    <string name="stats_reset_message">This can\'t be undone.</string>
+    <string name="stats_reset_confirm">Reset</string>
+
     <!-- Game UI -->
     <string name="action_hint">Hint</string>
     <string name="action_new_puzzle">New Puzzle</string>

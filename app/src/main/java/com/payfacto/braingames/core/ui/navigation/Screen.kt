@@ -3,6 +3,7 @@ package com.payfacto.braingames.core.ui.navigation
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Settings : Screen("settings")
+    object Stats : Screen("stats")
     object DifficultyPicker : Screen("difficulty/{$ARG_GAME_TYPE}") {
         fun createRoute(gameType: String) = "difficulty/$gameType"
     }

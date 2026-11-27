@@ -17,6 +17,7 @@ import com.payfacto.braingames.feature.crowns.ui.CrownsScreen
 import com.payfacto.braingames.feature.home.HomeScreen
 import com.payfacto.braingames.feature.kakuro.ui.KakuroScreen
 import com.payfacto.braingames.feature.settings.SettingsScreen
+import com.payfacto.braingames.feature.stats.StatsScreen
 import com.payfacto.braingames.feature.sudoku.ui.SudokuScreen
 import com.payfacto.braingames.feature.wordsearch.ui.WordSearchScreen
 
@@ -36,8 +37,15 @@ fun AppNavGraph(
                 },
                 onSettingsClick = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onStatsClick = {
+                    navController.navigate(Screen.Stats.route)
                 }
             )
+        }
+
+        composable(Screen.Stats.route) {
+            StatsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Screen.Settings.route) {

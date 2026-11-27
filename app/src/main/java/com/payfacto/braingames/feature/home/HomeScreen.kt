@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,7 +41,8 @@ import com.payfacto.braingames.core.ui.GameCatalog
 @Composable
 fun HomeScreen(
     onGameSelected: (GameType) -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onStatsClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -56,6 +58,12 @@ fun HomeScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 actions = {
+                    IconButton(onClick = onStatsClick) {
+                        Icon(
+                            Icons.Default.BarChart,
+                            contentDescription = stringResource(R.string.stats_title)
+                        )
+                    }
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             Icons.Default.Settings,

@@ -11,6 +11,7 @@ import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
+import com.payfacto.braingames.testutil.fakeStatsStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -29,9 +30,10 @@ class KakuroViewModelTest {
     private val puzzleSource = RecordingKakuroSource()
     private val preferences = fakePreferencesRepository()
     private val saves = FakeGameSaves()
+    private val stats = fakeStatsStore()
 
     private fun TestScope.newViewModel() =
-        KakuroViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource, saves)
+        KakuroViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource, saves, stats)
 
     /** Waits for the puzzle to load, enters 1 in (1,1), then uses a hint, which fills (1,2). */
     private fun TestScope.playSomeMoves(viewModel: KakuroViewModel) {
@@ -81,7 +83,7 @@ class KakuroViewModelTest {
         val resumedHandle = SavedStateHandle(
             mapOf(Screen.ARG_DIFFICULTY to Difficulty.EXPERT.name, Screen.ARG_RESUME to true)
         )
-        val resumed = KakuroViewModel(resumedHandle, puzzleSource, preferences, testScheduler.timeSource, saves)
+        val resumed = KakuroViewModel(resumedHandle, puzzleSource, preferences, testScheduler.timeSource, saves, stats)
         advanceUntilIdle()
 
         assertEquals(original.state.value.board, resumed.state.value.board)

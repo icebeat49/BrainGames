@@ -5,6 +5,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import com.payfacto.braingames.core.data.PreferencesDataSource
 import com.payfacto.braingames.core.data.PreferencesRepository
+import com.payfacto.braingames.core.stats.StatsStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -20,3 +23,7 @@ class FakePreferencesDataStore : DataStore<Preferences> {
 
 fun fakePreferencesRepository(): PreferencesRepository =
     PreferencesRepository(PreferencesDataSource(FakePreferencesDataStore()))
+
+/** Stats kept in memory; writes happen at once, before the call returns. */
+fun fakeStatsStore(): StatsStore =
+    StatsStore(FakePreferencesDataStore(), CoroutineScope(Dispatchers.Unconfined))

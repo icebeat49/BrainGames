@@ -13,6 +13,9 @@ import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.motion.MotionSettings
 import com.payfacto.braingames.core.save.GameSaveRecorder
 import com.payfacto.braingames.core.save.GameSaves
+import com.payfacto.braingames.core.stats.GameStatsRecorder
+import com.payfacto.braingames.core.stats.StatsKey
+import com.payfacto.braingames.core.stats.StatsStore
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.session.SessionState
@@ -99,7 +102,8 @@ class CrownsViewModel @Inject constructor(
     timeSource: TimeSource,
     private val motionSettings: MotionSettings,
     private val howToPlay: HowToPlayPreferences,
-    saves: GameSaves
+    saves: GameSaves,
+    stats: StatsStore
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
@@ -114,8 +118,11 @@ class CrownsViewModel @Inject constructor(
         timeSource = timeSource
     )
     private val recorder = GameSaveRecorder(
-        GameType.CROWNS, savedStateHandle, saves, difficulty, mode, CrownsGameSaver.KEYS
+        GameType.CROWNS, savedStateHandle, saves, difficulty, mode,
+        CrownsGameSaver.KEYS + GameStatsRecorder.KEYS
     )
+    private val statsRecorder =
+        GameStatsRecorder(StatsKey(GameType.CROWNS, difficulty, mode), savedStateHandle, stats)
     private val gestures = CrownsGestures()
     private var undoStack = UndoStack<CrownsBoard>(UNDO_LIMIT)
 
@@ -153,6 +160,7 @@ class CrownsViewModel @Inject constructor(
     fun newPuzzle() {
         gameSession.reset()
         recorder.clear()
+        statsRecorder.onNewPuzzle()
         undoStack.clear()
         revealedWrong.clear()
         CrownsGameSaver.clear(savedStateHandle)
@@ -429,6 +437,7 @@ class CrownsViewModel @Inject constructor(
                 errorCells = if (changedCells.any { cell -> cell in it.errorCells }) emptySet() else it.errorCells
             )
         }
+        statsRecorder.onMove()
         recorder.record()
         if (isClassic && CrownsValidator.isSolved(puzzle, newBoard)) win()
         return true
@@ -458,6 +467,7 @@ class CrownsViewModel @Inject constructor(
         _state.update { it.copy(isSolved = true) }
         play(SoundEvent.WIN)
         gameSession.complete(winDelay = if (motionSettings.animationsEnabled()) WIN_HIGHLIGHT else Duration.ZERO)
+        statsRecorder.onWin(gameSession.elapsedMs)
         recorder.clear()
     }
 

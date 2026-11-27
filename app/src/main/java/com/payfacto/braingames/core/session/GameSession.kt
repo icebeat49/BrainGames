@@ -61,6 +61,9 @@ class GameSession(
 
     val hasHints: Boolean get() = _state.value.hintsRemaining > 0
 
+    /** Time played so far, to the millisecond. */
+    val elapsedMs: Long get() = currentElapsedMs()
+
     init {
         scope.launch {
             preferences.preferences.map { it.isMuted }.distinctUntilChanged().collect { muted ->

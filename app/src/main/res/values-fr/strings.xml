@@ -25,6 +25,22 @@
     <string name="picker_replace_message">La partie en cours sera perdue.</string>
     <string name="picker_replace_confirm">Nouvelle partie</string>
 
+    <!-- Stats -->
+    <string name="stats_title">Statistiques</string>
+    <string name="stats_game_summary">%1$d jouées · %2$d gagnées</string>
+    <string name="stats_level">Niveau</string>
+    <string name="stats_played">Jouées</string>
+    <string name="stats_won">Gagnées</string>
+    <string name="stats_best">Record</string>
+    <string name="stats_average">Moyenne</string>
+    <string name="stats_all_levels">Tous</string>
+    <string name="stats_reset_all">Tout effacer</string>
+    <string name="stats_reset_game">Effacer les statistiques de %1$s</string>
+    <string name="stats_reset_game_title">Effacer les statistiques de %1$s ?</string>
+    <string name="stats_reset_all_title">Effacer toutes les statistiques ?</string>
+    <string name="stats_reset_message">Cette action est irréversible.</string>
+    <string name="stats_reset_confirm">Effacer</string>
+
     <!-- Game UI -->
     <string name="action_hint">Indice</string>
     <string name="action_new_puzzle">Nouvelle grille</string>

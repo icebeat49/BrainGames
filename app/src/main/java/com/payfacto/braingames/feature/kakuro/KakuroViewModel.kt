@@ -9,6 +9,9 @@ import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.save.GameSaveRecorder
 import com.payfacto.braingames.core.save.GameSaves
+import com.payfacto.braingames.core.stats.GameStatsRecorder
+import com.payfacto.braingames.core.stats.StatsKey
+import com.payfacto.braingames.core.stats.StatsStore
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
@@ -37,7 +40,8 @@ class KakuroViewModel @Inject constructor(
     private val puzzleSource: KakuroPuzzleSource,
     repository: PreferencesRepository,
     timeSource: TimeSource,
-    saves: GameSaves
+    saves: GameSaves,
+    stats: StatsStore
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
@@ -45,8 +49,11 @@ class KakuroViewModel @Inject constructor(
         GameSession(viewModelScope, savedStateHandle, repository, timeSource = timeSource)
     /** Kakuro has no Hardcore mode yet, so its save is always Classic. */
     private val recorder = GameSaveRecorder(
-        GameType.KAKURO, savedStateHandle, saves, difficulty, GameMode.CLASSIC, KakuroBoardSaver.KEYS
+        GameType.KAKURO, savedStateHandle, saves, difficulty, GameMode.CLASSIC,
+        KakuroBoardSaver.KEYS + GameStatsRecorder.KEYS
     )
+    private val statsRecorder =
+        GameStatsRecorder(StatsKey(GameType.KAKURO, difficulty, GameMode.CLASSIC), savedStateHandle, stats)
 
     private val _state = MutableStateFlow(KakuroUiState(difficulty = difficulty))
     val state: StateFlow<KakuroUiState> = _state.asStateFlow()
@@ -63,6 +70,7 @@ class KakuroViewModel @Inject constructor(
     fun newPuzzle() {
         gameSession.reset()
         recorder.clear()
+        statsRecorder.onNewPuzzle()
         KakuroBoardSaver.clear(savedStateHandle)
         _state.update { it.copy(board = EMPTY_BOARD, selectedCell = null) }
         viewModelScope.launch {
@@ -99,7 +107,7 @@ class KakuroViewModel @Inject constructor(
     fun enterNumber(number: Int) {
         val (row, col) = _state.value.selectedCell ?: return
         val newBoard = _state.value.board.withInput(row, col, number)
-        saveBoard(newBoard)
+        saveMove(newBoard)
         _state.update { it.copy(board = newBoard) }
         if (newBoard.isComplete()) win()
     }
@@ -107,7 +115,7 @@ class KakuroViewModel @Inject constructor(
     fun clearCell() {
         val (row, col) = _state.value.selectedCell ?: return
         val newBoard = _state.value.board.withInput(row, col, 0)
-        saveBoard(newBoard)
+        saveMove(newBoard)
         _state.update { it.copy(board = newBoard) }
     }
 
@@ -120,7 +128,7 @@ class KakuroViewModel @Inject constructor(
                 if (cell is KakuroCell.Input && cell.current != cell.solution) {
                     gameSession.consumeHint()
                     val newBoard = board.withInput(r, c, cell.solution)
-                    saveBoard(newBoard)
+                    saveMove(newBoard)
                     _state.update { it.copy(board = newBoard, selectedCell = Pair(r, c)) }
                     if (newBoard.isComplete()) win()
                     return true
@@ -141,15 +149,22 @@ class KakuroViewModel @Inject constructor(
         recorder.record()
     }
 
+    /** A change made by the player: the puzzle now counts as played. */
+    private fun saveMove(board: KakuroBoard) {
+        statsRecorder.onMove()
+        saveBoard(board)
+    }
+
     /** Every board change goes through here: kept for rotation and process death, and on disk. */
     private fun saveBoard(board: KakuroBoard) {
         KakuroBoardSaver.save(savedStateHandle, board)
         recorder.record()
     }
 
-    /** A won game is over: its save is deleted. */
+    /** A won game is over: it counts in the stats and its save is deleted. */
     private fun win() {
         gameSession.complete()
+        statsRecorder.onWin(gameSession.elapsedMs)
         recorder.clear()
     }
 

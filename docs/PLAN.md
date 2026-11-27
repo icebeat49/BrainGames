@@ -26,10 +26,11 @@ Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
    - The picker shows "Continue" (level, mode, time) above the levels; starting a new level over a saved game asks first.
    - A save from another mode or level is never loaded into the wrong game.
    - Saves are included in Android's default cloud backup; decide in step 8 whether to exclude them.
-6. **Stats**
-   - Per game, per difficulty and per mode (Classic / Hardcore): games played, games won, best time, average time.
-   - Stored in a separate typed DataStore (`stats.json`); keep total won time and compute the average.
-   - A dedicated Stats screen, opened from the Home screen.
+6. ✅ **Stats** (unit-tested; not yet checked on a device): Sudoku, Kakuro and Crowns. Hidden Word doesn't record stats yet.
+   - Per game, per difficulty and per mode (Classic / Hardcore): games played, games won, best time, average time. Each game also shows its totals ("12 played · 8 won"), and each mode an "All levels" row.
+   - A game counts as played on its first move, once per puzzle (opening it, rotating or Continue don't count it again); a win counts once, with its time.
+   - Stored in its own Preferences DataStore file (`stats`), apart from settings and saves; total won time is kept and the average computed.
+   - A Stats screen, opened from the chart icon on the Home screen.
    - Reset per game or all, with confirmation.
 7. **Cleanup pass**: Kakuro dark mode, hard-coded text, Follow-ups list. In French, the Settings colour-theme row is too wide ("Minuit" is cut off).
 8. **New app icon, then release**: adaptive icon, monochrome layer and Play Store icon, then release to Play internal testing.

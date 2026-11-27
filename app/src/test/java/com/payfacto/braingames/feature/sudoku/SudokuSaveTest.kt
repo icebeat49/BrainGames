@@ -11,6 +11,7 @@ import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
+import com.payfacto.braingames.testutil.fakeStatsStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -33,6 +34,7 @@ class SudokuSaveTest {
     private val puzzleSource = RecordingSudokuSource()
     private val preferences = fakePreferencesRepository()
     private val saves = FakeGameSaves()
+    private val stats = fakeStatsStore()
     private val solution = TestBoards.sudoku().solution
 
     /** A game screen opened from the picker: a new handle each time, as after the app was closed. */
@@ -44,7 +46,7 @@ class SudokuSaveTest {
                 Screen.ARG_RESUME to resume
             )
         )
-        return SudokuViewModel(handle, puzzleSource, preferences, testScheduler.timeSource, saves)
+        return SudokuViewModel(handle, puzzleSource, preferences, testScheduler.timeSource, saves, stats)
             .also { advanceUntilIdle() }
     }
 
