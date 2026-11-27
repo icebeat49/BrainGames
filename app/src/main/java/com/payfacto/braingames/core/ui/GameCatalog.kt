@@ -11,6 +11,7 @@ import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
+import com.payfacto.braingames.feature.kakuro.engine.KakuroDifficulty
 import com.payfacto.braingames.feature.crowns.ui.CrownIcon
 import com.payfacto.braingames.feature.wordsearch.data.WordSearchGenerator
 
@@ -44,8 +45,8 @@ object GameCatalog {
         GameType.KAKURO -> GameInfo(
             titleRes = R.string.home_play_kakuro,
             descriptionRes = R.string.home_desc_kakuro,
-            icon = Icons.Default.Extension
-            // Sizes come from the puzzle bank, which is being reworked.
+            icon = Icons.Default.Extension,
+            gridSize = KakuroDifficulty::sizeFor
         )
         GameType.WORD_SEARCH -> GameInfo(
             titleRes = R.string.home_play_wordsearch,

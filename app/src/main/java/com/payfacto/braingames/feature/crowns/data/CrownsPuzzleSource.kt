@@ -1,6 +1,8 @@
 package com.payfacto.braingames.feature.crowns.data
 
+import com.payfacto.braingames.core.data.RecentPuzzles
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
 import kotlinx.coroutines.Dispatchers
@@ -18,12 +20,12 @@ interface CrownsPuzzleSource {
  */
 class BundledCrownsPuzzleSource @Inject constructor(
     private val bank: CrownsPuzzleBank,
-    private val recent: RecentCrownsPuzzles
+    private val recent: RecentPuzzles
 ) : CrownsPuzzleSource {
 
     override suspend fun newPuzzle(difficulty: Difficulty): CrownsPuzzle = withContext(Dispatchers.IO) {
         val size = CrownsDifficulty.sizeFor(difficulty)
         val puzzles = bank.puzzles(size)
-        puzzles[recent.pick(size, puzzles.size)]
+        puzzles[recent.pick(GameType.CROWNS, size, puzzles.size)]
     }
 }

@@ -1,50 +1,35 @@
 package com.payfacto.braingames.feature.kakuro.data
 
 import android.content.Context
-import com.payfacto.braingames.core.model.Difficulty
-import com.payfacto.braingames.feature.kakuro.model.KakuroBoard
-import com.payfacto.braingames.feature.kakuro.model.KakuroCell
-import org.json.JSONArray
-import org.json.JSONObject
+import com.payfacto.braingames.R
+import com.payfacto.braingames.feature.kakuro.engine.KakuroPuzzle
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object KakuroPuzzleBank {
+/**
+ * The bundled, pre-verified puzzles for each grid size, read once from res/raw. Generated
+ * offline by KakuroBankWriter (unit tests); KakuroBankTest re-verifies every puzzle.
+ */
+@Singleton
+class KakuroPuzzleBank @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    private val cache = ConcurrentHashMap<Int, List<KakuroPuzzle>>()
 
-    fun load(context: Context, difficulty: Difficulty): KakuroBoard {
-        val rawId = when (difficulty) {
-            Difficulty.VERY_EASY -> com.payfacto.braingames.R.raw.kakuro_very_easy
-            Difficulty.EASY      -> com.payfacto.braingames.R.raw.kakuro_easy
-            Difficulty.MEDIUM    -> com.payfacto.braingames.R.raw.kakuro_medium
-            Difficulty.HARD      -> com.payfacto.braingames.R.raw.kakuro_hard
-            Difficulty.EXPERT    -> com.payfacto.braingames.R.raw.kakuro_expert
-        }
-        val json = context.resources.openRawResource(rawId).bufferedReader().readText()
-        val puzzles = JSONArray(json)
-        val puzzle = puzzles.getJSONObject((0 until puzzles.length()).random())
-        return parsePuzzle(puzzle)
+    /** Blocking file read on first use per size: call off the main thread. */
+    fun puzzles(size: Int): List<KakuroPuzzle> = cache.getOrPut(size) {
+        val text = context.resources.openRawResource(rawIdFor(size)).bufferedReader().use { it.readText() }
+        KakuroBankFormat.parse(text)
     }
 
-    private fun parsePuzzle(json: JSONObject): KakuroBoard {
-        val rows = json.getInt("rows")
-        val cols = json.getInt("cols")
-        val cellArray = json.getJSONArray("cells")
-
-        val grid: MutableList<MutableList<KakuroCell>> = MutableList(rows) {
-            MutableList(cols) { KakuroCell.Black }
-        }
-
-        for (i in 0 until cellArray.length()) {
-            val cellJson = cellArray.getJSONObject(i)
-            val r = cellJson.getInt("r")
-            val c = cellJson.getInt("c")
-            grid[r][c] = when (cellJson.getString("type")) {
-                "CLUE"  -> KakuroCell.Clue(
-                    downSum = cellJson.optInt("down", 0),
-                    acrossSum = cellJson.optInt("across", 0)
-                )
-                "INPUT" -> KakuroCell.Input(solution = cellJson.getInt("solution"))
-                else    -> KakuroCell.Black
-            }
-        }
-        return KakuroBoard(rows = rows, cols = cols, cells = grid)
+    private fun rawIdFor(size: Int): Int = when (size) {
+        6 -> R.raw.kakuro_bank_6
+        7 -> R.raw.kakuro_bank_7
+        8 -> R.raw.kakuro_bank_8
+        9 -> R.raw.kakuro_bank_9
+        10 -> R.raw.kakuro_bank_10
+        else -> error("No Kakuro bank for size $size")
     }
 }

@@ -31,8 +31,9 @@ class KakuroViewModelTest {
     private fun TestScope.newViewModel() =
         KakuroViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource)
 
-    /** Enters 1 in (1,1), then uses a hint, which fills (1,2). */
-    private fun playSomeMoves(viewModel: KakuroViewModel) {
+    /** Waits for the puzzle to load, enters 1 in (1,1), then uses a hint, which fills (1,2). */
+    private fun TestScope.playSomeMoves(viewModel: KakuroViewModel) {
+        advanceUntilIdle()
         viewModel.selectCell(1, 1)
         viewModel.enterNumber(1)
         viewModel.useHint()
@@ -73,7 +74,7 @@ class KakuroViewModelTest {
     private class RecordingKakuroSource : KakuroPuzzleSource {
         val requests = mutableListOf<Difficulty>()
 
-        override fun newPuzzle(difficulty: Difficulty): KakuroBoard {
+        override suspend fun newPuzzle(difficulty: Difficulty): KakuroBoard {
             requests += difficulty
             return TestBoards.kakuro()
         }

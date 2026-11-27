@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.TimeSource
 
@@ -53,14 +54,20 @@ class KakuroViewModel @Inject constructor(
 
     fun newPuzzle() {
         gameSession.reset()
-        val board = puzzleSource.newPuzzle(difficulty)
-        saveBoard(board)
-        _state.update { it.copy(board = board, selectedCell = null) }
-        gameSession.start()
+        KakuroBoardSaver.clear(savedStateHandle)
+        _state.update { it.copy(board = EMPTY_BOARD, selectedCell = null) }
+        viewModelScope.launch {
+            val board = puzzleSource.newPuzzle(difficulty)
+            saveBoard(board)
+            _state.update { it.copy(board = board) }
+            gameSession.start()
+        }
     }
 
     fun selectCell(row: Int, col: Int) {
-        if (_state.value.board.cellAt(row, col) is KakuroCell.Input) {
+        val board = _state.value.board
+        if (row !in 0 until board.rows || col !in 0 until board.cols) return
+        if (board.cellAt(row, col) is KakuroCell.Input) {
             _state.update { it.copy(selectedCell = Pair(row, col)) }
         }
     }
@@ -108,4 +115,9 @@ class KakuroViewModel @Inject constructor(
     fun onScreenHidden() = gameSession.onBackground()
 
     private fun saveBoard(board: KakuroBoard) = KakuroBoardSaver.save(savedStateHandle, board)
+
+    private companion object {
+        /** Shown, and ignored by input, while the next puzzle loads. */
+        val EMPTY_BOARD = KakuroBoard(0, 0, emptyList())
+    }
 }
