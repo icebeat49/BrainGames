@@ -95,6 +95,14 @@ fun DifficultyPickerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Home shows only icons and names, so the game is described here.
+            Text(
+                text = stringResource(info.descriptionRes),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(32.dp))
             saved?.let { save ->
                 ContinueButton(info, save, onClick = { onStart(save.difficulty, save.mode, true) })
                 Spacer(Modifier.height(32.dp))
