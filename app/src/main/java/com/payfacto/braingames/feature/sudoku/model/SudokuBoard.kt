@@ -26,6 +26,17 @@ data class SudokuBoard(
     /** Snapshot of one cell, for undo. */
     fun moveAt(index: Int): SudokuMove = SudokuMove(index, current[index], notes[index])
 
+    /** The other cells in the same row, column and box as [index]. */
+    fun peersOf(index: Int): Set<Int> {
+        val row = index / 9
+        val col = index % 9
+        val boxRow = (row / 3) * 3
+        val boxCol = (col / 3) * 3
+        return (0 until 9).flatMapTo(LinkedHashSet()) { i ->
+            listOf(row * 9 + i, i * 9 + col, (boxRow + i / 3) * 9 + (boxCol + i % 3))
+        } - index
+    }
+
     fun conflictsAt(index: Int): Boolean {
         val value = current[index]
         if (value == 0) return false

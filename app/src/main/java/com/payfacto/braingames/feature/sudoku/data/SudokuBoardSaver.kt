@@ -16,6 +16,7 @@ internal object SudokuBoardSaver {
     private const val KEY_NOTES = "sudoku_notes"
     private const val KEY_UNDO = "sudoku_undo"
     private const val INTS_PER_MOVE = 3
+    private const val LINKED_BIT = 1
 
     /** Every entry this saver writes, for the disk save. */
     val KEYS = listOf(KEY_SOLUTION, KEY_GIVEN, KEY_CURRENT, KEY_NOTES, KEY_UNDO)
@@ -40,14 +41,17 @@ internal object SudokuBoardSaver {
         )
     }
 
-    /** Undo history, oldest first, as `index, value, notesBitmask` triples. */
+    /**
+     * Undo history, oldest first, as `index, value, notesBitmask` triples. Notes use bits 1–9;
+     * bit 0 marks a move linked to the previous one (saves made before it simply have it unset).
+     */
     fun saveUndo(handle: SavedStateHandle, moves: List<SudokuMove>) {
         handle[KEY_UNDO] = IntArray(moves.size * INTS_PER_MOVE).also { data ->
             moves.forEachIndexed { i, move ->
                 val base = i * INTS_PER_MOVE
                 data[base] = move.index
                 data[base + 1] = move.value
-                data[base + 2] = move.notes.toBitmask()
+                data[base + 2] = move.notes.toBitmask() or (if (move.linkedToPrevious) LINKED_BIT else 0)
             }
         }
     }
@@ -56,7 +60,12 @@ internal object SudokuBoardSaver {
         val data = handle.get<IntArray>(KEY_UNDO) ?: return emptyList()
         return List(data.size / INTS_PER_MOVE) { i ->
             val base = i * INTS_PER_MOVE
-            SudokuMove(index = data[base], value = data[base + 1], notes = data[base + 2].toNoteSet())
+            SudokuMove(
+                index = data[base],
+                value = data[base + 1],
+                notes = data[base + 2].toNoteSet(),
+                linkedToPrevious = data[base + 2] and LINKED_BIT != 0
+            )
         }
     }
 

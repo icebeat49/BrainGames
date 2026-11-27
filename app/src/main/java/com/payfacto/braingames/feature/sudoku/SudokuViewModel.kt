@@ -179,10 +179,18 @@ class SudokuViewModel @Inject constructor(
         return true
     }
 
-    /** Puts back the cell changed last and selects it. */
+    /**
+     * Puts back the last move and selects its cell. A digit's move includes the notes it removed
+     * from other cells (linked snapshots), all restored together.
+     */
     fun undo() {
-        val move = undoStack.pop() ?: return
-        val newBoard = _state.value.board.withCell(move.index, move.value, move.notes)
+        var move = undoStack.pop() ?: return
+        var newBoard = _state.value.board
+        while (true) {
+            newBoard = newBoard.withCell(move.index, move.value, move.notes)
+            if (!move.linkedToPrevious) break
+            move = undoStack.pop() ?: break
+        }
         commit(newBoard)
         _state.update { it.copy(selectedCell = move.index) }
         completeIfSolved(newBoard)
@@ -234,12 +242,20 @@ class SudokuViewModel @Inject constructor(
     /**
      * The only way a player move changes the board: records the cell's previous state for
      * undo, then saves. Returns the new board, or null when nothing actually changed.
+     * A new digit is also removed from the notes of the cells it sees, when the mode allows it.
      */
     private fun changeCell(index: Int, value: Int, notes: Set<Int>): SudokuBoard? {
         val board = _state.value.board
         if (board.current[index] == value && board.notes[index] == notes) return null
         undoStack.push(board.moveAt(index))
-        return board.withCell(index, value, notes).also(::commit)
+        var newBoard = board.withCell(index, value, notes)
+        if (assists.autoRemovePeerNotes && value != 0 && value != board.current[index]) {
+            newBoard.peersOf(index).filter { value in newBoard.notes[it] }.forEach { peer ->
+                undoStack.push(newBoard.moveAt(peer).copy(linkedToPrevious = true))
+                newBoard = newBoard.withCell(peer, newBoard.current[peer], newBoard.notes[peer] - value)
+            }
+        }
+        return newBoard.also(::commit)
     }
 
     /** Saves a changed board. Any change also clears error marks revealed by a check. */

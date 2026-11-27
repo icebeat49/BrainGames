@@ -142,6 +142,12 @@ private fun DrawScope.drawGrid(
         isAntiAlias = true
         color = onSurface.copy(alpha = 0.55f).toArgb()
     }
+    // The selected cell's digit stands out in every note that holds it (Classic).
+    val matchingNote = if (assists.highlightMatchingNotes) selectedValue else 0
+    val matchingNotePaint = android.graphics.Paint(notePaint).apply {
+        color = primaryColor.toArgb()
+        isFakeBoldText = true
+    }
     val subCellSize = cellSize / 3f
     for (row in 0 until 9) {
         for (col in 0 until 9) {
@@ -151,9 +157,15 @@ private fun DrawScope.drawGrid(
                 for (n in notesForCell) {
                     val noteRow = (n - 1) / 3
                     val noteCol = (n - 1) % 3
-                    val noteX = col * cellSize + (noteCol + 0.5f) * subCellSize
-                    val noteY = row * cellSize + (noteRow + 0.5f) * subCellSize + notePaint.textSize * 0.38f
-                    drawContext.canvas.nativeCanvas.drawText(n.toString(), noteX, noteY, notePaint)
+                    val centreX = col * cellSize + (noteCol + 0.5f) * subCellSize
+                    val centreY = row * cellSize + (noteRow + 0.5f) * subCellSize
+                    val paint = if (n == matchingNote) {
+                        drawCircle(primaryColor.copy(alpha = 0.25f), radius = subCellSize * 0.45f, center = Offset(centreX, centreY))
+                        matchingNotePaint
+                    } else {
+                        notePaint
+                    }
+                    drawContext.canvas.nativeCanvas.drawText(n.toString(), centreX, centreY + paint.textSize * 0.38f, paint)
                 }
             }
         }

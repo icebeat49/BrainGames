@@ -14,8 +14,12 @@ data class SudokuAssists(
     val maxHints: Int,
     /** false: the player taps Check when the grid is full. */
     val autoDetectWin: Boolean,
-    /** Writing a digit hides that cell's own notes. Other cells' notes are never touched. */
+    /** Writing a digit hides that cell's own notes. */
     val clearCellNotesOnEntry: Boolean,
+    /** Writing a digit also removes it from the notes of every cell in its row, column and box. */
+    val autoRemovePeerNotes: Boolean,
+    /** Notes holding the selected cell's digit are highlighted. */
+    val highlightMatchingNotes: Boolean,
 ) {
     val hintsAllowed: Boolean get() = maxHints > 0
 
@@ -27,6 +31,8 @@ data class SudokuAssists(
             maxHints = 5,
             autoDetectWin = true,
             clearCellNotesOnEntry = true,
+            autoRemovePeerNotes = true,
+            highlightMatchingNotes = true,
         )
 
         /** Pen and paper: only the selected cell is highlighted. */
@@ -37,6 +43,8 @@ data class SudokuAssists(
             maxHints = 0,
             autoDetectWin = false,
             clearCellNotesOnEntry = true,
+            autoRemovePeerNotes = false,
+            highlightMatchingNotes = false,
         )
 
         fun forMode(mode: GameMode): SudokuAssists = when (mode) {

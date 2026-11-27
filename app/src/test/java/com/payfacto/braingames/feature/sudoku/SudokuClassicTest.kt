@@ -38,7 +38,9 @@ class SudokuClassicTest {
                 showConflicts = true,
                 maxHints = GameSession.DEFAULT_HINTS,
                 autoDetectWin = true,
-                clearCellNotesOnEntry = true
+                clearCellNotesOnEntry = true,
+                autoRemovePeerNotes = true,
+                highlightMatchingNotes = true
             ),
             SudokuAssists.forMode(GameMode.CLASSIC)
         )
