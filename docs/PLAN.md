@@ -41,5 +41,9 @@ Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
    - French Settings: the five colour swatches share the row's width and long names wrap, so "Minuit" is no longer cut off.
    - Follow-ups list, fixed: the win sound no longer replays on rotation; Kakuro's error sound no longer comes one move late; two quick "New puzzle" taps load one puzzle (all games); `.gitattributes` keeps `gradlew` in LF; the template tests are gone; deprecated volume icons replaced.
    - Left as they are: the selected cell and notes mode reset after the app is killed in the background (the board itself is saved); Hidden Word's fixed yellow and grey (step 9); Gradle 10 deprecation warnings, which come from the Android Gradle Plugin 8.9 itself and go away with a plugin upgrade.
-8. **New app icon, then release**: adaptive icon, monochrome layer and Play Store icon, then release to Play internal testing.
+8. **New app icon, then release** (icon checked on the Pixel 8; release build launched on it, play-test pending; upload not done)
+   - ✅ Icon: a 3×3 grid of game-colour tiles with a crown on the dark board. Adaptive layers, a monochrome layer (themed icons), Android 7 icons and the 512×512 Play icon, all drawn by `tools/icon/make_icon.py`.
+   - ✅ Backup: everything is kept (settings, language, stats, games in progress), written out in the two backup rule files.
+   - ✅ Release build: R8 code and resource shrinking (3.1 MB APK, 5.3 MB bundle), unused Lottie removed. Signed with the upload key named in a git-ignored `keystore.properties`; without it, with the debug key (testable, rejected by Play).
+   - Upload to Play internal testing: done by you, following [RELEASE.md](RELEASE.md) (upload key, Play Console, store text EN/FR, data safety, privacy policy draft).
 9. **Later**: Kakuro Hardcore, Hidden Word, sound.

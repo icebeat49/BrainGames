@@ -16,6 +16,7 @@ local.properties
 *.dex
 *.keystore
 *.jks
+keystore.properties
 *.hprof
 
 # IntelliJ / Android Studio: keep shared config (codeStyles, compiler.xml,

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,6 +21,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // The Play upload key lives outside the repository: keystore.properties (git-ignored) at the
+    // project root names it, with storeFile, storePassword, keyAlias and keyPassword.
+    // Without that file, release builds are signed with the debug key: installable for testing,
+    // and rejected by Play, so a debug-signed build can't be uploaded by mistake.
+    val uploadKey = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { file.inputStream().use(::load) }
+    }
+    signingConfigs {
+        if (uploadKey != null) {
+            create("upload") {
+                storeFile = rootProject.file(uploadKey.getProperty("storeFile"))
+                storePassword = uploadKey.getProperty("storePassword")
+                keyAlias = uploadKey.getProperty("keyAlias")
+                keyPassword = uploadKey.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // Hidden games stay reachable during development.
@@ -28,7 +48,9 @@ android {
             buildConfigField("boolean", "FEATURE_SOUND", "false")
         }
         release {
+            signingConfig = signingConfigs.findByName("upload") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             buildConfigField("boolean", "FEATURE_WORD_SEARCH", "false")
             buildConfigField("boolean", "FEATURE_CROWNS", "true")
@@ -88,9 +110,6 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-
-    // Lottie
-    implementation(libs.lottie.compose)
 
     // Test
     testImplementation(libs.junit)

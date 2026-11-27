@@ -1,19 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Backup and device-to-device transfer, Android 12 and later.
+    Decision (plan step 8): everything is kept, so a reinstall or a new phone brings back the
+    settings, the language, the stats and the games in progress (files/datastore and files/saves).
+    No include or exclude rules means the whole app data is included.
 -->
 <data-extraction-rules>
-    <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
-    </cloud-backup>
-    <!--
-    <device-transfer>
-        <include .../>
-        <exclude .../>
-    </device-transfer>
-    -->
+    <cloud-backup />
+    <device-transfer />
 </data-extraction-rules>

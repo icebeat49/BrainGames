@@ -1,13 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cloud backup, Android 11 and earlier (Android 12+ reads data_extraction_rules.xml).
+    Decision (plan step 8): everything is kept: settings, language, stats and games in progress.
+    No include or exclude rules means the whole app data is included.
 -->
-<full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
-</full-backup-content>
+<full-backup-content />
