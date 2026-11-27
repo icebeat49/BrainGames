@@ -118,24 +118,35 @@ private class KakuroPaints {
     }
 }
 
+/**
+ * A clue cell, drawn the usual Kakuro way: a diagonal from the top-left corner to the bottom-right
+ * one, the across sum in the top-right triangle (next to its row) and the down sum in the
+ * bottom-left triangle (above its column), both clear of the line.
+ */
 private fun DrawScope.drawClue(cell: KakuroCell.Clue, topLeft: Offset, cellSize: Size, colors: KakuroGridColors, paint: Paint) {
     drawRect(colors.block, topLeft, cellSize)
     drawLine(
         color = colors.clueText.copy(alpha = 0.6f),
-        start = Offset(topLeft.x + 2f, topLeft.y + cellSize.height - 2f),
-        end = Offset(topLeft.x + cellSize.width - 2f, topLeft.y + 2f),
+        start = Offset(topLeft.x + 2f, topLeft.y + 2f),
+        end = Offset(topLeft.x + cellSize.width - 2f, topLeft.y + cellSize.height - 2f),
         strokeWidth = 2f
     )
     paint.color = colors.clueText.toArgb()
+    // Digits are about 0.72 of the text size tall: half of that below the centre puts them on it.
+    val baselineShift = paint.textSize * 0.36f
     if (cell.acrossSum > 0) {
-        // across sum: bottom-left
-        drawText(cell.acrossSum, Offset(topLeft.x + cellSize.width * 0.28f, topLeft.y + cellSize.height * 0.85f), paint)
+        val centre = Offset(topLeft.x + cellSize.width * CLUE_FAR, topLeft.y + cellSize.height * CLUE_NEAR)
+        drawText(cell.acrossSum, centre.copy(y = centre.y + baselineShift), paint)
     }
     if (cell.downSum > 0) {
-        // down sum: top-right
-        drawText(cell.downSum, Offset(topLeft.x + cellSize.width * 0.72f, topLeft.y + cellSize.height * 0.42f), paint)
+        val centre = Offset(topLeft.x + cellSize.width * CLUE_NEAR, topLeft.y + cellSize.height * CLUE_FAR)
+        drawText(cell.downSum, centre.copy(y = centre.y + baselineShift), paint)
     }
 }
+
+/** Where a sum is centred in its triangle, as a fraction of the cell: two-digit sums stay clear of the diagonal. */
+private const val CLUE_NEAR = 0.30f
+private const val CLUE_FAR = 0.70f
 
 private fun DrawScope.drawInput(
     cell: KakuroCell.Input,

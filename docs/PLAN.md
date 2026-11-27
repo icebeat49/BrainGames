@@ -34,6 +34,7 @@ Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
    - Reset per game or all, with confirmation.
 7. ✅ **Cleanup pass** (unit-tested; not yet checked on a device)
    - Kakuro dark mode: the grid takes its colours from the theme (blocks, clues, cells, selection, lines) instead of fixed white and dark grey. Sudoku's conflicts use the theme's error colour.
+   - Kakuro clue cells (found on the device): the diagonal ran the wrong way and both sums sat on it. Now drawn the usual way: a top-left to bottom-right diagonal, the across sum in the top-right triangle and the down sum in the bottom-left one, clear of the line.
    - Hard-coded text: the back buttons in the level picker and Settings, and the ✕ / ✏ buttons of the number pad, now have labels for screen readers (EN/FR).
    - French Settings: the five colour swatches share the row's width and long names wrap, so "Minuit" is no longer cut off.
    - Follow-ups list, fixed: the win sound no longer replays on rotation; Kakuro's error sound no longer comes one move late; two quick "New puzzle" taps load one puzzle (all games); `.gitattributes` keeps `gradlew` in LF; the template tests are gone; deprecated volume icons replaced.
