@@ -45,16 +45,16 @@ class WordSearchViewModelTest {
     fun `a correct selection crosses the word off, in either direction`() = runTest(mainDispatcher.dispatcher) {
         val viewModel = newViewModel().also { advanceUntilIdle() }
 
-        assertTrue(viewModel.checkSelection(firstWord.cells().reversed()))
+        assertEquals(SelectionResult.FOUND, viewModel.checkSelection(firstWord.cells().reversed()))
         assertTrue(viewModel.state.value.board.words.first().found)
-        assertFalse("already found", viewModel.checkSelection(firstWord.cells()))
+        assertEquals("already found", SelectionResult.NOT_A_WORD, viewModel.checkSelection(firstWord.cells()))
     }
 
     @Test
     fun `a selection that is not a listed word is not kept`() = runTest(mainDispatcher.dispatcher) {
         val viewModel = newViewModel().also { advanceUntilIdle() }
 
-        assertFalse(viewModel.checkSelection(firstWord.cells().drop(1)))
+        assertEquals(SelectionResult.NOT_A_WORD, viewModel.checkSelection(firstWord.cells().drop(1)))
         assertTrue(viewModel.state.value.board.words.none { it.found })
     }
 

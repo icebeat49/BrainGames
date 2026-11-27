@@ -96,7 +96,7 @@ fun AppNavGraph(
         // Registered even when Word Search is hidden, so the code stays compiled and can be re-enabled.
         composable(
             route = Screen.WordSearch.route,
-            arguments = listOf(difficultyArgument())
+            arguments = listOf(difficultyArgument(), modeArgument())
         ) { backStack ->
             IfGameEnabled(GameType.WORD_SEARCH, backStack, navController) {
                 WordSearchScreen(
@@ -145,7 +145,7 @@ private fun gameRoute(game: GameType, difficulty: Difficulty, mode: GameMode, re
     when (game) {
         GameType.SUDOKU      -> Screen.Sudoku.createRoute(difficulty.name, mode.name, resume)
         GameType.KAKURO      -> Screen.Kakuro.createRoute(difficulty.name, resume)
-        GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name)
+        GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name, mode.name)
         GameType.CROWNS      -> Screen.Crowns.createRoute(difficulty.name, mode.name, resume)
     }
 

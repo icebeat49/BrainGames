@@ -18,11 +18,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -55,6 +59,8 @@ import com.payfacto.braingames.core.ui.components.GameTopBar
 import com.payfacto.braingames.core.ui.components.KeepScreenOn
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
 import com.payfacto.braingames.core.ui.components.WinSoundEffect
+import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.feature.wordsearch.SelectionResult
 import com.payfacto.braingames.feature.wordsearch.WordSearchViewModel
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
 
@@ -76,10 +82,16 @@ fun WordSearchScreen(
 
     WinSoundEffect(session.showWin, soundManager)
 
+    val isClassic = state.mode == GameMode.CLASSIC
     val found = state.board.words.count { it.found }
     val total = state.board.words.size
-    // The leftover letters light up once every word is crossed off, or once the secret is found.
-    val revealSecret = state.board.allWordsFound() || state.board.secretFound
+    // Gold once there is something to read: the real secret when found, or in Classic the letters
+    // left once every word is found. Hardcore leaves the reading to the player, as on paper.
+    val leftoverCells = when {
+        state.board.secretFound -> state.board.hiddenWordCells
+        isClassic && state.board.allWordsFound() -> state.board.unmarkedCells()
+        else -> emptyList()
+    }
 
     Scaffold(
         topBar = {
@@ -88,10 +100,12 @@ fun WordSearchScreen(
                 hintsRemaining = session.hintsRemaining,
                 isMuted = session.isMuted,
                 onBack = onBack,
-                onHint = {
-                    val used = viewModel.useHint()
-                    if (used) soundManager.play(SoundEvent.CORRECT)
-                },
+                onHint = if (isClassic) {
+                    {
+                        val used = viewModel.useHint()
+                        if (used) soundManager.play(SoundEvent.CORRECT)
+                    }
+                } else null,
                 onNewPuzzle = {
                     soundManager.play(SoundEvent.TAP)
                     viewModel.newPuzzle()
@@ -122,46 +136,82 @@ fun WordSearchScreen(
                     .consumeWindowInsets(PaddingValues(CONTENT_PADDING)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = stringResource(R.string.wordsearch_words_found, found, total),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
+                // Counter in the middle, Undo at the end of the same line: close to the grid.
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(
+                            if (isClassic) R.string.wordsearch_words_found else R.string.wordsearch_words_ticked,
+                            found, total
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    FilledTonalIconButton(
+                        onClick = { if (viewModel.undo()) soundManager.play(SoundEvent.TAP) },
+                        enabled = state.canUndo && !state.board.secretFound,
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.action_undo))
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
 
                 WordSearchGrid(
                     board = state.board,
                     hintCell = state.hintCell,
                     primaryColor = MaterialTheme.colorScheme.primary,
                     onSurface = MaterialTheme.colorScheme.onSurface,
-                    revealHiddenWord = revealSecret,
+                    leftoverCells = leftoverCells,
                     // Keeps the edge columns out of the side strips where a swipe means Back,
                     // so a word can be dragged from them (only the page padding with 3-button navigation).
                     modifier = Modifier.windowInsetsPadding(
                         WindowInsets.systemGestures.only(WindowInsetsSides.Horizontal)
                     ),
                     onSelectionComplete = { cells ->
-                        val matched = viewModel.checkSelection(cells)
-                        if (matched) soundManager.play(SoundEvent.CORRECT)
-                        else soundManager.play(SoundEvent.ERROR)
+                        when (viewModel.checkSelection(cells)) {
+                            SelectionResult.FOUND -> soundManager.play(SoundEvent.CORRECT)
+                            SelectionResult.NOT_A_WORD -> soundManager.play(SoundEvent.ERROR)
+                            // Same sound for every line, so it tells nothing about right or wrong.
+                            SelectionResult.DRAWN, SelectionResult.ERASED -> soundManager.play(SoundEvent.TAP)
+                            SelectionResult.IGNORED -> Unit
+                        }
                     }
                 )
 
                 Spacer(Modifier.height(10.dp))
 
-                if (state.board.hiddenWord.isNotEmpty()) {
-                    SecretWordCard(
-                        board = state.board,
-                        onCheck = { guess ->
-                            val right = viewModel.checkSecret(guess)
-                            soundManager.play(if (right) SoundEvent.CORRECT else SoundEvent.ERROR)
-                            right
+                val secretCard: @Composable () -> Unit = {
+                    if (state.board.hiddenWord.isNotEmpty()) {
+                        SecretWordCard(
+                            board = state.board,
+                            onCheck = { guess ->
+                                val right = viewModel.checkSecret(guess)
+                                soundManager.play(if (right) SoundEvent.CORRECT else SoundEvent.ERROR)
+                                right
+                            }
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
+                }
+                val wordList: @Composable () -> Unit = {
+                    WordList(
+                        words = state.board.words,
+                        onWordTapped = if (isClassic || state.board.secretFound) null else {
+                            { word ->
+                                soundManager.play(SoundEvent.TAP)
+                                viewModel.onWordTapped(word)
+                            }
                         }
                     )
-                    Spacer(Modifier.height(10.dp))
                 }
-
-                WordList(words = state.board.words)
+                // Hardcore ticks words off by hand, so the list sits right under the grid.
+                if (isClassic) {
+                    secretCard()
+                    wordList()
+                } else {
+                    wordList()
+                    secretCard()
+                }
             }
         }
 

@@ -15,8 +15,9 @@ sealed class Screen(val route: String) {
     object Kakuro : Screen("kakuro/{$ARG_DIFFICULTY}?$ARG_RESUME={$ARG_RESUME}") {
         fun createRoute(difficulty: String, resume: Boolean = false) = "kakuro/$difficulty?$ARG_RESUME=$resume"
     }
-    object WordSearch : Screen("wordsearch/{$ARG_DIFFICULTY}") {
-        fun createRoute(difficulty: String) = "wordsearch/$difficulty"
+    /** `mode` is optional: links without it start in Classic. */
+    object WordSearch : Screen("wordsearch/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}") {
+        fun createRoute(difficulty: String, mode: String) = "wordsearch/$difficulty?$ARG_MODE=$mode"
     }
     /** Same pattern as Sudoku: `mode` and `resume` are optional. */
     object Crowns : Screen("crowns/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}&$ARG_RESUME={$ARG_RESUME}") {

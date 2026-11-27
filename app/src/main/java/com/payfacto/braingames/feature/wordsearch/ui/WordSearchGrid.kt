@@ -20,12 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
-import com.payfacto.braingames.feature.wordsearch.model.WordEntry
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
 import kotlin.math.PI
 import kotlin.math.abs
@@ -38,7 +36,8 @@ fun WordSearchGrid(
     hintCell: Pair<Int, Int>?,
     primaryColor: Color,
     onSurface: Color,
-    revealHiddenWord: Boolean = false,
+    /** Cells lit up in gold: the leftover letters, once there is something to read in them. */
+    leftoverCells: List<Pair<Int, Int>> = emptyList(),
     modifier: Modifier = Modifier,
     onSelectionComplete: (List<Pair<Int, Int>>) -> Unit
 ) {
@@ -51,6 +50,8 @@ fun WordSearchGrid(
         animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
         label = "pulse"
     )
+
+    val leftoverSet = remember(leftoverCells) { leftoverCells.toSet() }
 
     Canvas(
         modifier = modifier
@@ -84,20 +85,24 @@ fun WordSearchGrid(
         val cellW = size.width / board.cols.toFloat()
         val cellH = size.height / board.rows.toFloat()
 
-        // Hidden word reveal highlight (golden)
-        if (revealHiddenWord) {
-            board.hiddenWordCells.forEach { (r, c) ->
+        // Leftover letters (golden)
+        leftoverCells.forEach { (r, c) ->
+            drawRect(
+                color = Color(1f, 0.8f, 0f, 0.45f),
+                topLeft = Offset(c * cellW, r * cellH),
+                size = Size(cellW, cellH)
+            )
+        }
+
+        // Lines: found words in Classic, the player's pencil lines in Hardcore
+        board.marks.forEach { cells ->
+            cells.forEach { (r, c) ->
                 drawRect(
-                    color = Color(1f, 0.8f, 0f, 0.45f),
+                    color = primaryColor.copy(alpha = 0.35f),
                     topLeft = Offset(c * cellW, r * cellH),
                     size = Size(cellW, cellH)
                 )
             }
-        }
-
-        // Found word highlights
-        board.words.filter { it.found }.forEach { entry ->
-            drawWordHighlight(entry, cellW, cellH, primaryColor.copy(alpha = 0.35f))
         }
 
         // Current drag selection
@@ -132,7 +137,7 @@ fun WordSearchGrid(
         for (r in 0 until board.rows) {
             for (c in 0 until board.cols) {
                 val ch = board.grid[r][c]
-                val isHiddenCell = revealHiddenWord && board.hiddenWordCells.contains(Pair(r, c))
+                val isHiddenCell = leftoverSet.contains(Pair(r, c))
                 textPaint.color = when {
                     isHiddenCell -> primaryColor.toArgb()
                     else -> onSurface.toArgb()
@@ -154,14 +159,6 @@ fun WordSearchGrid(
         for (i in 0..board.rows) {
             drawLine(lineColor, Offset(0f, i * cellH), Offset(size.width, i * cellH), strokeWidth = 1f)
         }
-    }
-}
-
-private fun DrawScope.drawWordHighlight(entry: WordEntry, cellW: Float, cellH: Float, color: Color) {
-    for (i in entry.word.indices) {
-        val r = entry.startRow + entry.direction.dRow * i
-        val c = entry.startCol + entry.direction.dCol * i
-        drawRect(color = color, topLeft = Offset(c * cellW, r * cellH), size = Size(cellW, cellH))
     }
 }
 

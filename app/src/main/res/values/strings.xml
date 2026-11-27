@@ -101,6 +101,9 @@
 
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d words found</string>
+    <string name="wordsearch_words_ticked">%1$d / %2$d words ticked off</string>
+    <string name="wordsearch_mode_classic_description">Words are checked as you trace them, with hints. Type the secret word to win.</string>
+    <string name="wordsearch_mode_hardcore_description">Like pencil and paper: trace any line, tick words off and on whenever you like. Trace a line again to erase it. Nothing is checked and there are no hints; only the secret word tells you if everything is right.</string>
     <string name="wordsearch_secret_title">Secret word</string>
     <string name="wordsearch_secret_explanation">The letters no word uses, read left to right and top to bottom, spell the secret.</string>
     <plurals name="wordsearch_secret_letters">

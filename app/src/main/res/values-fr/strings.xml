@@ -102,6 +102,9 @@
 
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d mots trouvés</string>
+    <string name="wordsearch_words_ticked">%1$d / %2$d mots cochés</string>
+    <string name="wordsearch_mode_classic_description">Les mots sont vérifiés dès que vous les tracez, avec des indices. Trouvez le mot secret pour gagner.</string>
+    <string name="wordsearch_mode_hardcore_description">Comme au crayon sur papier : tracez où vous voulez, cochez et décochez les mots quand vous voulez. Retracez un trait pour l’effacer. Rien n’est vérifié et il n’y a pas d’indice ; seul le mot secret vous dira si tout est juste.</string>
     <string name="wordsearch_secret_title">Mot secret</string>
     <string name="wordsearch_secret_explanation">Les lettres qu’aucun mot n’utilise, lues de gauche à droite et de haut en bas, forment le mot secret.</string>
     <plurals name="wordsearch_secret_letters">

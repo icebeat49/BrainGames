@@ -52,6 +52,10 @@ object GameCatalog {
             titleRes = R.string.home_play_wordsearch,
             descriptionRes = R.string.home_desc_wordsearch,
             icon = Icons.Default.Search,
+            modeDescriptions = mapOf(
+                GameMode.CLASSIC to R.string.wordsearch_mode_classic_description,
+                GameMode.HARDCORE to R.string.wordsearch_mode_hardcore_description
+            ),
             gridSize = WordSearchDifficulty::sizeFor
         )
         GameType.CROWNS -> GameInfo(
