@@ -21,7 +21,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +36,7 @@ import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.GameTopBar
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
+import com.payfacto.braingames.core.ui.components.WinSoundEffect
 import com.payfacto.braingames.feature.wordsearch.WordSearchViewModel
 
 @Composable
@@ -53,9 +53,7 @@ fun WordSearchScreen(
         onStopOrDispose { viewModel.onScreenHidden() }
     }
 
-    LaunchedEffect(session.showWin) {
-        if (session.showWin) soundManager.play(SoundEvent.WIN)
-    }
+    WinSoundEffect(session.showWin, soundManager)
 
     val found = state.board.words.count { it.found }
     val total = state.board.words.size

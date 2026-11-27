@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -132,6 +133,7 @@ class CrownsViewModel @Inject constructor(
      */
     private val revealedWrong = mutableSetOf<Int>()
 
+    private var puzzleLoading: Job? = null
     private val _state = MutableStateFlow(CrownsUiState(difficulty = difficulty, mode = mode))
     val state: StateFlow<CrownsUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
@@ -176,7 +178,9 @@ class CrownsViewModel @Inject constructor(
                 isSolved = false
             )
         }
-        viewModelScope.launch {
+        // A second tap before the first puzzle is ready replaces it, so only one puzzle loads.
+        puzzleLoading?.cancel()
+        puzzleLoading = viewModelScope.launch {
             val puzzle = puzzleSource.newPuzzle(difficulty)
             val board = CrownsBoard.empty(puzzle.size)
             CrownsGameSaver.savePuzzle(savedStateHandle, puzzle)

@@ -11,6 +11,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import com.payfacto.braingames.feature.sudoku.model.SudokuAssists
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
@@ -26,7 +27,7 @@ fun SudokuGrid(
     onCellTap: (Int) -> Unit,
     /** Cells revealed as wrong after a failed Hardcore check. */
     errorCells: Set<Int> = emptySet(),
-    errorColor: Color = Color.Red
+    errorColor: Color
 ) {
     Canvas(
         modifier = Modifier
@@ -96,7 +97,7 @@ private fun DrawScope.drawGrid(
             // Conflict highlight
             if (assists.showConflicts && board.conflictsAt(idx)) {
                 drawRect(
-                    color = Color.Red.copy(alpha = 0.2f),
+                    color = colors.error.copy(alpha = 0.2f),
                     topLeft = Offset(col * cellSize, row * cellSize),
                     size = Size(cellSize, cellSize)
                 )
@@ -119,7 +120,7 @@ private fun DrawScope.drawGrid(
                 val isConflict = assists.showConflicts && board.conflictsAt(idx)
                 textPaint.color = when {
                     idx in errorCells -> colors.error.toArgb()
-                    isConflict -> android.graphics.Color.RED
+                    isConflict -> colors.error.toArgb()
                     isGiven    -> onSurface.toArgb()
                     else       -> primaryColor.toArgb()
                 }
@@ -171,12 +172,4 @@ private fun DrawScope.drawGrid(
         drawLine(color, Offset(0f, pos), Offset(size.width, pos), strokeWidth = stroke)
         drawLine(color, Offset(pos, 0f), Offset(pos, size.height), strokeWidth = stroke)
     }
-}
-
-private fun Color.toArgb(): Int {
-    val a = (alpha * 255).toInt()
-    val r = (red * 255).toInt()
-    val g = (green * 255).toInt()
-    val b = (blue * 255).toInt()
-    return (a shl 24) or (r shl 16) or (g shl 8) or b
 }

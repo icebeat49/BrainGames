@@ -10,6 +10,7 @@ import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
 import com.payfacto.braingames.testutil.fakeStatsStore
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 
@@ -35,6 +36,7 @@ class SudokuFixture(mode: GameMode? = null) {
     val solution: IntArray = TestBoards.sudoku().solution
 
     /** Builds a ViewModel on the test scheduler and lets its puzzle load. */
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun TestScope.newViewModel(): SudokuViewModel =
         SudokuViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource, saves, stats)
             .also { advanceUntilIdle() }

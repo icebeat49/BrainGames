@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import com.payfacto.braingames.feature.wordsearch.model.WordEntry
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
@@ -175,12 +176,4 @@ private fun getCellsOnLine(start: Pair<Int, Int>, end: Pair<Int, Int>): List<Pai
     val normCol = if (dCol > 0) 1 else if (dCol < 0) -1 else 0
     val steps = maxOf(abs(dRow), abs(dCol))
     return (0..steps).map { i -> Pair(start.first + normRow * i, start.second + normCol * i) }
-}
-
-private fun Color.toArgb(): Int {
-    val a = (alpha * 255).toInt()
-    val r = (red * 255).toInt()
-    val g = (green * 255).toInt()
-    val b = (blue * 255).toInt()
-    return (a shl 24) or (r shl 16) or (g shl 8) or b
 }

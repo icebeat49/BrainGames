@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.payfacto.braingames.R
 
@@ -54,7 +56,8 @@ fun NumberPad(
         verticalAlignment = Alignment.CenterVertically
     ) {
         FilledTonalButton(onClick = onClear) {
-            Text("✕")
+            val clearLabel = stringResource(R.string.action_clear)
+            Text("✕", modifier = Modifier.semantics { contentDescription = clearLabel })
         }
         Spacer(modifier = Modifier.width(16.dp))
         FilledTonalButton(
@@ -68,7 +71,8 @@ fun NumberPad(
                 ButtonDefaults.filledTonalButtonColors()
             }
         ) {
-            Text("✏")
+            val notesLabel = stringResource(R.string.action_notes)
+            Text("✏", modifier = Modifier.semantics { contentDescription = notesLabel })
         }
         if (onUndo != null) {
             Spacer(modifier = Modifier.width(16.dp))

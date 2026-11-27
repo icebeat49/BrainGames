@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.TimeSource
@@ -77,6 +78,7 @@ class SudokuViewModel @Inject constructor(
         GameStatsRecorder(StatsKey(GameType.SUDOKU, difficulty, mode), savedStateHandle, stats)
     private var undoStack = UndoStack<SudokuMove>()
 
+    private var puzzleLoading: Job? = null
     private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty, mode = mode))
     val state: StateFlow<SudokuUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
@@ -105,7 +107,9 @@ class SudokuViewModel @Inject constructor(
                 errorCells = emptySet()
             )
         }
-        viewModelScope.launch {
+        // A second tap before the first puzzle is ready replaces it, so only one puzzle loads.
+        puzzleLoading?.cancel()
+        puzzleLoading = viewModelScope.launch {
             val board = puzzleSource.newPuzzle(difficulty)
             saveBoard(board)
             _state.update { it.copy(board = board, isGenerating = false) }

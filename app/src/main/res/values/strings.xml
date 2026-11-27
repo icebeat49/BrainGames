@@ -109,6 +109,7 @@
 
     <!-- Shared actions -->
     <string name="action_clear">Clear</string>
+    <string name="action_notes">Notes</string>
     <string name="action_cancel">Cancel</string>
 
     <!-- Crowns -->

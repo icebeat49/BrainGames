@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.TimeSource
@@ -55,6 +56,7 @@ class KakuroViewModel @Inject constructor(
     private val statsRecorder =
         GameStatsRecorder(StatsKey(GameType.KAKURO, difficulty, GameMode.CLASSIC), savedStateHandle, stats)
 
+    private var puzzleLoading: Job? = null
     private val _state = MutableStateFlow(KakuroUiState(difficulty = difficulty))
     val state: StateFlow<KakuroUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
@@ -73,7 +75,9 @@ class KakuroViewModel @Inject constructor(
         statsRecorder.onNewPuzzle()
         KakuroBoardSaver.clear(savedStateHandle)
         _state.update { it.copy(board = EMPTY_BOARD, selectedCell = null) }
-        viewModelScope.launch {
+        // A second tap before the first puzzle is ready replaces it, so only one puzzle loads.
+        puzzleLoading?.cancel()
+        puzzleLoading = viewModelScope.launch {
             val board = puzzleSource.newPuzzle(difficulty)
             saveBoard(board)
             _state.update { it.copy(board = board) }

@@ -1,15 +1,24 @@
 package com.payfacto.braingames.feature.kakuro.ui
 
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import com.payfacto.braingames.feature.kakuro.model.KakuroBoard
 import com.payfacto.braingames.feature.kakuro.model.KakuroCell
@@ -19,10 +28,12 @@ import kotlin.math.floor
 fun KakuroGrid(
     board: KakuroBoard,
     selectedCell: Pair<Int, Int>?,
-    primaryColor: Color,
     onCellTap: (Int, Int) -> Unit
 ) {
     if (board.rows == 0 || board.cols == 0) return
+    val colorScheme = MaterialTheme.colorScheme
+    val colors = remember(colorScheme) { KakuroGridColors.from(colorScheme) }
+    val paints = remember { KakuroPaints() }
 
     Canvas(
         modifier = Modifier
@@ -38,95 +49,109 @@ fun KakuroGrid(
                 }
             }
     ) {
-        val cellW = size.width / board.cols.toFloat()
-        val cellH = size.height / board.rows.toFloat()
-
-        val textPaintLarge = android.graphics.Paint().apply {
-            textAlign = android.graphics.Paint.Align.CENTER
-            textSize = cellH * 0.55f
-            isAntiAlias = true
-            isFakeBoldText = true
-        }
-        val textPaintSmall = android.graphics.Paint().apply {
-            textAlign = android.graphics.Paint.Align.CENTER
-            textSize = cellH * 0.28f
-            isAntiAlias = true
-        }
-
+        val cellSize = Size(size.width / board.cols, size.height / board.rows)
+        paints.resize(cellSize.height)
         for (r in 0 until board.rows) {
             for (c in 0 until board.cols) {
-                val left = c * cellW
-                val top = r * cellH
-                val cellSize = Size(cellW, cellH)
-
+                val topLeft = Offset(c * cellSize.width, r * cellSize.height)
                 when (val cell = board.cellAt(r, c)) {
-                    is KakuroCell.Black -> {
-                        drawRect(Color.DarkGray, Offset(left, top), cellSize)
-                    }
-                    is KakuroCell.Clue -> {
-                        drawRect(Color.DarkGray, Offset(left, top), cellSize)
-                        // diagonal line
-                        drawLine(
-                            color = Color.White,
-                            start = Offset(left + 2f, top + cellH - 2f),
-                            end = Offset(left + cellW - 2f, top + 2f),
-                            strokeWidth = 2f
-                        )
-                        textPaintSmall.color = android.graphics.Color.WHITE
-                        // across sum — bottom-left
-                        if (cell.acrossSum > 0) {
-                            drawContext.canvas.nativeCanvas.drawText(
-                                cell.acrossSum.toString(),
-                                left + cellW * 0.28f,
-                                top + cellH * 0.85f,
-                                textPaintSmall
-                            )
-                        }
-                        // down sum — top-right
-                        if (cell.downSum > 0) {
-                            drawContext.canvas.nativeCanvas.drawText(
-                                cell.downSum.toString(),
-                                left + cellW * 0.72f,
-                                top + cellH * 0.42f,
-                                textPaintSmall
-                            )
-                        }
-                    }
+                    is KakuroCell.Black -> drawRect(colors.block, topLeft, cellSize)
+                    is KakuroCell.Clue -> drawClue(cell, topLeft, cellSize, colors, paints.clue)
                     is KakuroCell.Input -> {
-                        val isSelected = selectedCell?.first == r && selectedCell.second == c
-                        val bgColor = when {
-                            isSelected -> primaryColor.copy(alpha = 0.3f)
-                            else -> Color.White
-                        }
-                        drawRect(bgColor, Offset(left, top), cellSize)
-                        if (cell.current != 0) {
-                            textPaintLarge.color = primaryColor.toArgb()
-                            drawContext.canvas.nativeCanvas.drawText(
-                                cell.current.toString(),
-                                left + cellW / 2f,
-                                top + cellH * 0.68f,
-                                textPaintLarge
-                            )
-                        }
+                        val selected = selectedCell?.first == r && selectedCell.second == c
+                        drawInput(cell, selected, topLeft, cellSize, colors, paints.digit)
                     }
                 }
-
-                // cell border
-                drawRect(
-                    color = Color.Gray,
-                    topLeft = Offset(left, top),
-                    size = cellSize,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
-                )
+                drawRect(colors.gridLine, topLeft, cellSize, style = Stroke(width = 1f))
             }
         }
     }
 }
 
-private fun Color.toArgb(): Int {
-    val a = (alpha * 255).toInt()
-    val r = (red * 255).toInt()
-    val g = (green * 255).toInt()
-    val b = (blue * 255).toInt()
-    return (a shl 24) or (r shl 16) or (g shl 8) or b
+/** Grid colours taken from the theme, so the grid follows light and dark themes. */
+private class KakuroGridColors(
+    val block: Color,
+    val clueText: Color,
+    val cell: Color,
+    val selected: Color,
+    val digit: Color,
+    val gridLine: Color
+) {
+    companion object {
+        /** Below this surface luminance the theme is dark (same rule as the region palette). */
+        private const val DARK_SURFACE_LUMINANCE = 0.5f
+        private const val LIGHT_BLOCK_SHADE = 0.75f
+        private const val DARK_BLOCK_SHADE = 0.22f
+
+        fun from(scheme: ColorScheme): KakuroGridColors {
+            val dark = scheme.surface.luminance() < DARK_SURFACE_LUMINANCE
+            val shade = if (dark) DARK_BLOCK_SHADE else LIGHT_BLOCK_SHADE
+            return KakuroGridColors(
+                block = lerp(scheme.surface, scheme.onSurface, shade),
+                clueText = if (dark) scheme.onSurface else scheme.surface,
+                cell = scheme.surface,
+                selected = scheme.primary.copy(alpha = 0.3f).compositeOn(scheme.surface),
+                digit = scheme.primary,
+                gridLine = scheme.onSurface.copy(alpha = 0.35f)
+            )
+        }
+
+        private fun Color.compositeOn(background: Color): Color = lerp(background, copy(alpha = 1f), alpha)
+    }
+}
+
+/** Text paints, made once and resized to the cell height on each draw. */
+private class KakuroPaints {
+    val digit = Paint().apply {
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+        isFakeBoldText = true
+    }
+    val clue = Paint().apply {
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+    }
+
+    fun resize(cellHeight: Float) {
+        digit.textSize = cellHeight * 0.55f
+        clue.textSize = cellHeight * 0.28f
+    }
+}
+
+private fun DrawScope.drawClue(cell: KakuroCell.Clue, topLeft: Offset, cellSize: Size, colors: KakuroGridColors, paint: Paint) {
+    drawRect(colors.block, topLeft, cellSize)
+    drawLine(
+        color = colors.clueText.copy(alpha = 0.6f),
+        start = Offset(topLeft.x + 2f, topLeft.y + cellSize.height - 2f),
+        end = Offset(topLeft.x + cellSize.width - 2f, topLeft.y + 2f),
+        strokeWidth = 2f
+    )
+    paint.color = colors.clueText.toArgb()
+    if (cell.acrossSum > 0) {
+        // across sum: bottom-left
+        drawText(cell.acrossSum, Offset(topLeft.x + cellSize.width * 0.28f, topLeft.y + cellSize.height * 0.85f), paint)
+    }
+    if (cell.downSum > 0) {
+        // down sum: top-right
+        drawText(cell.downSum, Offset(topLeft.x + cellSize.width * 0.72f, topLeft.y + cellSize.height * 0.42f), paint)
+    }
+}
+
+private fun DrawScope.drawInput(
+    cell: KakuroCell.Input,
+    selected: Boolean,
+    topLeft: Offset,
+    cellSize: Size,
+    colors: KakuroGridColors,
+    paint: Paint
+) {
+    drawRect(if (selected) colors.selected else colors.cell, topLeft, cellSize)
+    if (cell.current != 0) {
+        paint.color = colors.digit.toArgb()
+        drawText(cell.current, Offset(topLeft.x + cellSize.width / 2f, topLeft.y + cellSize.height * 0.68f), paint)
+    }
+}
+
+private fun DrawScope.drawText(value: Int, baseline: Offset, paint: Paint) {
+    drawContext.canvas.nativeCanvas.drawText(value.toString(), baseline.x, baseline.y, paint)
 }

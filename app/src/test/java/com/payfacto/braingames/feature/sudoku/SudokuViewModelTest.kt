@@ -13,6 +13,7 @@ import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
 import com.payfacto.braingames.testutil.fakeStatsStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -109,6 +110,32 @@ class SudokuViewModelTest {
 
         assertEquals(2, puzzleSource.requests.size)
         assertEquals(SessionState(), viewModel.session.value)
+    }
+
+    @Test
+    fun `tapping new puzzle twice quickly loads only one puzzle`() = runTest(mainDispatcher.dispatcher) {
+        val slowSource = SlowSudokuSource()
+        val viewModel = SudokuViewModel(savedState, slowSource, preferences, testScheduler.timeSource, saves, stats)
+        advanceUntilIdle()
+
+        viewModel.newPuzzle()
+        viewModel.newPuzzle()
+        advanceUntilIdle()
+
+        // The puzzle the screen opened with, then one for both taps.
+        assertEquals(2, slowSource.delivered)
+    }
+
+    /** Takes a second to make each puzzle, so a second request can arrive before the first is ready. */
+    private class SlowSudokuSource : SudokuPuzzleSource {
+        var delivered = 0
+            private set
+
+        override suspend fun newPuzzle(difficulty: Difficulty): SudokuBoard {
+            delay(1_000)
+            delivered++
+            return TestBoards.sudoku()
+        }
     }
 
     private class RecordingSudokuSource : SudokuPuzzleSource {

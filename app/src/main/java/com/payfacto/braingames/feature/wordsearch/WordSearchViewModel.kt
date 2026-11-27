@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -41,6 +42,7 @@ class WordSearchViewModel @Inject constructor(
     private val gameSession =
         GameSession(viewModelScope, savedStateHandle, repository, timeSource = timeSource)
 
+    private var puzzleLoading: Job? = null
     private val _state = MutableStateFlow(WordSearchUiState(difficulty = difficulty))
     val state: StateFlow<WordSearchUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
@@ -58,7 +60,9 @@ class WordSearchViewModel @Inject constructor(
         gameSession.reset()
         WordSearchBoardSaver.clear(savedStateHandle)
         _state.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
+        // A second tap before the first puzzle is ready replaces it, so only one puzzle loads.
+        puzzleLoading?.cancel()
+        puzzleLoading = viewModelScope.launch {
             val board = puzzleSource.newPuzzle(difficulty)
             saveBoard(board)
             _state.update { it.copy(board = board, hintCell = null, isLoading = false) }

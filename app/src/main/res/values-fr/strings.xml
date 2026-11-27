@@ -111,6 +111,7 @@
 
     <!-- Actions partagées -->
     <string name="action_clear">Effacer</string>
+    <string name="action_notes">Notes</string>
     <string name="action_cancel">Annuler</string>
 
     <!-- Couronnes -->

@@ -9,7 +9,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.GameTopBar
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
+import com.payfacto.braingames.core.ui.components.WinSoundEffect
 import com.payfacto.braingames.feature.kakuro.KakuroViewModel
 import com.payfacto.braingames.feature.sudoku.ui.NumberPad
 
@@ -40,9 +40,7 @@ fun KakuroScreen(
         onStopOrDispose { viewModel.onScreenHidden() }
     }
 
-    LaunchedEffect(session.showWin) {
-        if (session.showWin) soundManager.play(SoundEvent.WIN)
-    }
+    WinSoundEffect(session.showWin, soundManager)
 
     Scaffold(
         topBar = {
@@ -79,7 +77,6 @@ fun KakuroScreen(
             KakuroGrid(
                 board = state.board,
                 selectedCell = state.selectedCell,
-                primaryColor = MaterialTheme.colorScheme.primary,
                 onCellTap = { r, c ->
                     soundManager.play(SoundEvent.TAP)
                     viewModel.selectCell(r, c)
@@ -89,7 +86,8 @@ fun KakuroScreen(
             NumberPad(
                 onNumber = { n ->
                     viewModel.enterNumber(n)
-                    if (state.board.hasConflicts()) soundManager.play(SoundEvent.ERROR)
+                    // The board after this move: `state` is still the one from before it.
+                    if (viewModel.state.value.board.hasConflicts()) soundManager.play(SoundEvent.ERROR)
                     else soundManager.play(SoundEvent.TAP)
                 },
                 onClear = {

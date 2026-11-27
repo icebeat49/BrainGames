@@ -14,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +27,7 @@ import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.GameTopBar
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
+import com.payfacto.braingames.core.ui.components.WinSoundEffect
 import com.payfacto.braingames.feature.sudoku.SudokuViewModel
 import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.ui.components.CheckFailedDialog
@@ -48,9 +48,7 @@ fun SudokuScreen(
         onStopOrDispose { viewModel.onScreenHidden() }
     }
 
-    LaunchedEffect(session.showWin) {
-        if (session.showWin) soundManager.play(SoundEvent.WIN)
-    }
+    WinSoundEffect(session.showWin, soundManager)
 
     Scaffold(
         topBar = {

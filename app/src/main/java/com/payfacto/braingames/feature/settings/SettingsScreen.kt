@@ -2,7 +2,6 @@ package com.payfacto.braingames.feature.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,7 +67,7 @@ fun SettingsScreen(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
             )
@@ -83,15 +86,20 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+            // Each swatch gets an equal share of the width, so long names (in French) wrap
+            // instead of pushing the last swatch off screen.
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup()
             ) {
                 AppColorTheme.entries.forEach { theme ->
                     ThemeSwatch(
                         theme = theme,
                         isSelected = theme == prefs.colorTheme,
-                        onClick = { viewModel.setColorTheme(theme) }
+                        onClick = { viewModel.setColorTheme(theme) },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -155,7 +163,7 @@ fun SettingsScreen(
                     headlineContent = { Text(stringResource(R.string.settings_sound)) },
                     leadingContent = {
                         Icon(
-                            if (prefs.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                            if (prefs.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                             contentDescription = null
                         )
                     },
@@ -177,7 +185,8 @@ fun SettingsScreen(
 private fun ThemeSwatch(
     theme: AppColorTheme,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val scheme = appColorScheme(theme, darkTheme = false)
     val label = stringResource(
@@ -189,7 +198,10 @@ private fun ThemeSwatch(
             AppColorTheme.MIDNIGHT -> R.string.theme_midnight
         }
     )
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
+    ) {
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -199,8 +211,7 @@ private fun ThemeSwatch(
                     width = if (isSelected) 3.dp else 0.dp,
                     color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
                     shape = CircleShape
-                )
-                .clickable(onClick = onClick),
+                ),
             contentAlignment = Alignment.Center
         ) {
             if (isSelected) {
@@ -213,6 +224,11 @@ private fun ThemeSwatch(
             }
         }
         Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelLarge)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center,
+            maxLines = 2
+        )
     }
 }
