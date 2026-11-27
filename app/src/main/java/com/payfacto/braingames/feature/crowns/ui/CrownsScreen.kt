@@ -61,6 +61,7 @@ import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.CheckFailedDialog
 import com.payfacto.braingames.core.ui.components.GameTopBar
+import com.payfacto.braingames.core.ui.components.KeepScreenOn
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
 import com.payfacto.braingames.feature.crowns.CrownsUiState
 import com.payfacto.braingames.feature.crowns.CrownsViewModel
@@ -75,6 +76,8 @@ fun CrownsScreen(
     val session by viewModel.session.collectAsStateWithLifecycle()
     val isClassic = state.mode == GameMode.CLASSIC
     var confirmClear by rememberSaveable { mutableStateOf(false) }
+
+    KeepScreenOn()
 
     LifecycleStartEffect(viewModel) {
         viewModel.onScreenVisible()

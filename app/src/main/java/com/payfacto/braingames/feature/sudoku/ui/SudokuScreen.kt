@@ -23,14 +23,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.payfacto.braingames.R
+import com.payfacto.braingames.core.model.CheckResult
 import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
+import com.payfacto.braingames.core.ui.components.CheckFailedDialog
 import com.payfacto.braingames.core.ui.components.GameTopBar
+import com.payfacto.braingames.core.ui.components.KeepScreenOn
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
 import com.payfacto.braingames.core.ui.components.WinSoundEffect
 import com.payfacto.braingames.feature.sudoku.SudokuViewModel
-import com.payfacto.braingames.core.model.CheckResult
-import com.payfacto.braingames.core.ui.components.CheckFailedDialog
 import com.payfacto.braingames.feature.sudoku.model.SudokuAssists
 
 @Composable
@@ -42,6 +43,8 @@ fun SudokuScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val session by viewModel.session.collectAsStateWithLifecycle()
     val assists = SudokuAssists.forMode(state.mode)
+
+    KeepScreenOn()
 
     LifecycleStartEffect(viewModel) {
         viewModel.onScreenVisible()

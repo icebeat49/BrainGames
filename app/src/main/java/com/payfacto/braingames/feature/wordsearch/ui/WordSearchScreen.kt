@@ -35,6 +35,7 @@ import com.payfacto.braingames.R
 import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.sound.SoundManager
 import com.payfacto.braingames.core.ui.components.GameTopBar
+import com.payfacto.braingames.core.ui.components.KeepScreenOn
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
 import com.payfacto.braingames.core.ui.components.WinSoundEffect
 import com.payfacto.braingames.feature.wordsearch.WordSearchViewModel
@@ -47,6 +48,8 @@ fun WordSearchScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val session by viewModel.session.collectAsStateWithLifecycle()
+
+    KeepScreenOn()
 
     LifecycleStartEffect(viewModel) {
         viewModel.onScreenVisible()
