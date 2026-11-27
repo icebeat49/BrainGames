@@ -7,6 +7,7 @@ import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
+import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
@@ -30,9 +31,10 @@ class SudokuViewModelTest {
     private val savedState = SavedStateHandle(mapOf(Screen.ARG_DIFFICULTY to Difficulty.HARD.name))
     private val puzzleSource = RecordingSudokuSource()
     private val preferences = fakePreferencesRepository()
+    private val saves = FakeGameSaves()
 
     private fun TestScope.newViewModel() =
-        SudokuViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource)
+        SudokuViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource, saves)
 
     /** Plays a value, a hint and two notes, with 3.5 s on the clock, then leaves the screen. */
     private fun TestScope.playSomeMoves(viewModel: SudokuViewModel) {

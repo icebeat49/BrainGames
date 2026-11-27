@@ -5,6 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.core.model.GameType
+import com.payfacto.braingames.core.save.GameSaveRecorder
+import com.payfacto.braingames.core.save.GameSaves
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
@@ -32,28 +36,33 @@ class KakuroViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val puzzleSource: KakuroPuzzleSource,
     repository: PreferencesRepository,
-    timeSource: TimeSource
+    timeSource: TimeSource,
+    saves: GameSaves
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
     private val gameSession =
         GameSession(viewModelScope, savedStateHandle, repository, timeSource = timeSource)
+    /** Kakuro has no Hardcore mode yet, so its save is always Classic. */
+    private val recorder = GameSaveRecorder(
+        GameType.KAKURO, savedStateHandle, saves, difficulty, GameMode.CLASSIC, KakuroBoardSaver.KEYS
+    )
 
     private val _state = MutableStateFlow(KakuroUiState(difficulty = difficulty))
     val state: StateFlow<KakuroUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
 
     init {
-        val restored = KakuroBoardSaver.restore(savedStateHandle)
-        if (restored == null) {
-            newPuzzle()
-        } else {
-            _state.update { it.copy(board = restored) }
+        when {
+            restoreGame() -> Unit
+            savedStateHandle.get<Boolean>(Screen.ARG_RESUME) == true -> resumeSavedGame()
+            else -> newPuzzle()
         }
     }
 
     fun newPuzzle() {
         gameSession.reset()
+        recorder.clear()
         KakuroBoardSaver.clear(savedStateHandle)
         _state.update { it.copy(board = EMPTY_BOARD, selectedCell = null) }
         viewModelScope.launch {
@@ -61,7 +70,22 @@ class KakuroViewModel @Inject constructor(
             saveBoard(board)
             _state.update { it.copy(board = board) }
             gameSession.start()
+            recorder.record()
         }
+    }
+
+    /** Continue: loads the game saved on disk, or a new puzzle if it is gone. */
+    private fun resumeSavedGame() {
+        viewModelScope.launch {
+            if (recorder.restoreInto() && restoreGame()) gameSession.reloadSaved() else newPuzzle()
+        }
+    }
+
+    /** Shows the board kept in the SavedStateHandle. Returns false when it holds none. */
+    private fun restoreGame(): Boolean {
+        val board = KakuroBoardSaver.restore(savedStateHandle) ?: return false
+        _state.update { it.copy(board = board) }
+        return true
     }
 
     fun selectCell(row: Int, col: Int) {
@@ -77,7 +101,7 @@ class KakuroViewModel @Inject constructor(
         val newBoard = _state.value.board.withInput(row, col, number)
         saveBoard(newBoard)
         _state.update { it.copy(board = newBoard) }
-        if (newBoard.isComplete()) gameSession.complete()
+        if (newBoard.isComplete()) win()
     }
 
     fun clearCell() {
@@ -98,7 +122,7 @@ class KakuroViewModel @Inject constructor(
                     val newBoard = board.withInput(r, c, cell.solution)
                     saveBoard(newBoard)
                     _state.update { it.copy(board = newBoard, selectedCell = Pair(r, c)) }
-                    if (newBoard.isComplete()) gameSession.complete()
+                    if (newBoard.isComplete()) win()
                     return true
                 }
             }
@@ -112,9 +136,22 @@ class KakuroViewModel @Inject constructor(
 
     /** Call when the game screen becomes visible / hidden, so the clock pauses in the background. */
     fun onScreenVisible() = gameSession.onForeground()
-    fun onScreenHidden() = gameSession.onBackground()
+    fun onScreenHidden() {
+        gameSession.onBackground()
+        recorder.record()
+    }
 
-    private fun saveBoard(board: KakuroBoard) = KakuroBoardSaver.save(savedStateHandle, board)
+    /** Every board change goes through here: kept for rotation and process death, and on disk. */
+    private fun saveBoard(board: KakuroBoard) {
+        KakuroBoardSaver.save(savedStateHandle, board)
+        recorder.record()
+    }
+
+    /** A won game is over: its save is deleted. */
+    private fun win() {
+        gameSession.complete()
+        recorder.clear()
+    }
 
     private companion object {
         /** Shown, and ignored by input, while the next puzzle loads. */

@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.payfacto.braingames.core.config.FeatureFlags
+import com.payfacto.braingames.core.model.Difficulty
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.sound.SoundManager
@@ -54,14 +55,8 @@ fun AppNavGraph(
             IfGameEnabled(gameType, backStack, navController) {
                 DifficultyPickerScreen(
                     gameType = gameType,
-                    onStart = { difficulty, mode ->
-                        val route = when (gameType) {
-                            GameType.SUDOKU      -> Screen.Sudoku.createRoute(difficulty.name, mode.name)
-                            GameType.KAKURO      -> Screen.Kakuro.createRoute(difficulty.name)
-                            GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name)
-                            GameType.CROWNS      -> Screen.Crowns.createRoute(difficulty.name, mode.name)
-                        }
-                        navController.navigate(route)
+                    onStart = { difficulty, mode, resume ->
+                        navController.navigate(gameRoute(gameType, difficulty, mode, resume))
                     },
                     onBack = { navController.popBackStack() }
                 )
@@ -72,7 +67,7 @@ fun AppNavGraph(
         // SavedStateHandle, so the screens themselves don't need it.
         composable(
             route = Screen.Sudoku.route,
-            arguments = listOf(difficultyArgument(), modeArgument())
+            arguments = listOf(difficultyArgument(), modeArgument(), resumeArgument())
         ) {
             SudokuScreen(
                 soundManager = soundManager,
@@ -82,7 +77,7 @@ fun AppNavGraph(
 
         composable(
             route = Screen.Kakuro.route,
-            arguments = listOf(difficultyArgument())
+            arguments = listOf(difficultyArgument(), resumeArgument())
         ) {
             KakuroScreen(
                 soundManager = soundManager,
@@ -105,7 +100,7 @@ fun AppNavGraph(
 
         composable(
             route = Screen.Crowns.route,
-            arguments = listOf(difficultyArgument(), modeArgument())
+            arguments = listOf(difficultyArgument(), modeArgument(), resumeArgument())
         ) { backStack ->
             IfGameEnabled(GameType.CROWNS, backStack, navController) {
                 CrownsScreen(
@@ -136,6 +131,22 @@ private fun IfGameEnabled(
         }
     }
 }
+
+/** The game screen for a picker choice; [resume] continues the saved game. */
+private fun gameRoute(game: GameType, difficulty: Difficulty, mode: GameMode, resume: Boolean): String =
+    when (game) {
+        GameType.SUDOKU      -> Screen.Sudoku.createRoute(difficulty.name, mode.name, resume)
+        GameType.KAKURO      -> Screen.Kakuro.createRoute(difficulty.name, resume)
+        GameType.WORD_SEARCH -> Screen.WordSearch.createRoute(difficulty.name)
+        GameType.CROWNS      -> Screen.Crowns.createRoute(difficulty.name, mode.name, resume)
+    }
+
+/** Optional `?resume=`; false starts a new puzzle. */
+private fun resumeArgument() =
+    navArgument(Screen.ARG_RESUME) {
+        type = NavType.BoolType
+        defaultValue = false
+    }
 
 private fun difficultyArgument() =
     navArgument(Screen.ARG_DIFFICULTY) { type = NavType.StringType }

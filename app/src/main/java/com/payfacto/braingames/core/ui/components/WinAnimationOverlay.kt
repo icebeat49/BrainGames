@@ -146,7 +146,7 @@ fun WinAnimationOverlay(
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        text = stringResource(R.string.win_time, formatTime(elapsedSeconds)),
+                        text = stringResource(R.string.win_time, formatElapsed(elapsedSeconds)),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -170,8 +170,3 @@ fun WinAnimationOverlay(
     }
 }
 
-private fun formatTime(seconds: Long): String {
-    val m = seconds / 60
-    val s = seconds % 60
-    return "%02d:%02d".format(m, s)
-}

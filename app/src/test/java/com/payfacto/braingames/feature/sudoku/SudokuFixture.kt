@@ -6,6 +6,7 @@ import com.payfacto.braingames.core.ui.navigation.Screen
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
 import com.payfacto.braingames.feature.sudoku.model.SudokuBoard
 import com.payfacto.braingames.core.model.GameMode
+import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.TestBoards
 import com.payfacto.braingames.testutil.fakePreferencesRepository
 import kotlinx.coroutines.test.TestScope
@@ -27,12 +28,13 @@ class SudokuFixture(mode: GameMode? = null) {
     )
     val puzzleSource = RecordingSudokuSource()
     private val preferences = fakePreferencesRepository()
+    val saves = FakeGameSaves()
 
     val solution: IntArray = TestBoards.sudoku().solution
 
     /** Builds a ViewModel on the test scheduler and lets its puzzle load. */
     fun TestScope.newViewModel(): SudokuViewModel =
-        SudokuViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource)
+        SudokuViewModel(savedState, puzzleSource, preferences, testScheduler.timeSource, saves)
             .also { advanceUntilIdle() }
 
     /** A digit different from the solution at [cell]. */

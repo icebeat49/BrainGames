@@ -19,6 +19,11 @@
     <string name="difficulty_hard">Difficile</string>
     <string name="difficulty_expert">Expert</string>
     <string name="difficulty_select">Choisir un niveau</string>
+    <string name="picker_continue">Continuer</string>
+    <string name="picker_new_game">Nouvelle partie</string>
+    <string name="picker_replace_title">Commencer une nouvelle partie ?</string>
+    <string name="picker_replace_message">La partie en cours sera perdue.</string>
+    <string name="picker_replace_confirm">Nouvelle partie</string>
 
     <!-- Game UI -->
     <string name="action_hint">Indice</string>

@@ -6,19 +6,21 @@ sealed class Screen(val route: String) {
     object DifficultyPicker : Screen("difficulty/{$ARG_GAME_TYPE}") {
         fun createRoute(gameType: String) = "difficulty/$gameType"
     }
-    /** `mode` is optional so plain `sudoku/{difficulty}` links keep working. */
-    object Sudoku : Screen("sudoku/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}") {
-        fun createRoute(difficulty: String, mode: String) = "sudoku/$difficulty?$ARG_MODE=$mode"
+    /** `mode` and `resume` are optional so plain `sudoku/{difficulty}` links keep working. */
+    object Sudoku : Screen("sudoku/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}&$ARG_RESUME={$ARG_RESUME}") {
+        fun createRoute(difficulty: String, mode: String, resume: Boolean = false) =
+            "sudoku/$difficulty?$ARG_MODE=$mode&$ARG_RESUME=$resume"
     }
-    object Kakuro : Screen("kakuro/{$ARG_DIFFICULTY}") {
-        fun createRoute(difficulty: String) = "kakuro/$difficulty"
+    object Kakuro : Screen("kakuro/{$ARG_DIFFICULTY}?$ARG_RESUME={$ARG_RESUME}") {
+        fun createRoute(difficulty: String, resume: Boolean = false) = "kakuro/$difficulty?$ARG_RESUME=$resume"
     }
     object WordSearch : Screen("wordsearch/{$ARG_DIFFICULTY}") {
         fun createRoute(difficulty: String) = "wordsearch/$difficulty"
     }
-    /** Same pattern as Sudoku: `mode` is optional. */
-    object Crowns : Screen("crowns/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}") {
-        fun createRoute(difficulty: String, mode: String) = "crowns/$difficulty?$ARG_MODE=$mode"
+    /** Same pattern as Sudoku: `mode` and `resume` are optional. */
+    object Crowns : Screen("crowns/{$ARG_DIFFICULTY}?$ARG_MODE={$ARG_MODE}&$ARG_RESUME={$ARG_RESUME}") {
+        fun createRoute(difficulty: String, mode: String, resume: Boolean = false) =
+            "crowns/$difficulty?$ARG_MODE=$mode&$ARG_RESUME=$resume"
     }
 
     companion object {
@@ -26,5 +28,7 @@ sealed class Screen(val route: String) {
         const val ARG_GAME_TYPE = "gameType"
         const val ARG_DIFFICULTY = "difficulty"
         const val ARG_MODE = "mode"
+        /** True when the player chose Continue: the game loads its saved state instead of a new puzzle. */
+        const val ARG_RESUME = "resume"
     }
 }

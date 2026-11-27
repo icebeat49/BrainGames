@@ -11,6 +11,8 @@ import com.payfacto.braingames.core.model.FailedCheck
 import com.payfacto.braingames.core.model.GameMode
 import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.core.motion.MotionSettings
+import com.payfacto.braingames.core.save.GameSaveRecorder
+import com.payfacto.braingames.core.save.GameSaves
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.sound.SoundEvent
 import com.payfacto.braingames.core.session.SessionState
@@ -96,7 +98,8 @@ class CrownsViewModel @Inject constructor(
     repository: PreferencesRepository,
     timeSource: TimeSource,
     private val motionSettings: MotionSettings,
-    private val howToPlay: HowToPlayPreferences
+    private val howToPlay: HowToPlayPreferences,
+    saves: GameSaves
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
@@ -110,6 +113,9 @@ class CrownsViewModel @Inject constructor(
         maxHints = if (isClassic) GameSession.DEFAULT_HINTS else 0,
         timeSource = timeSource
     )
+    private val recorder = GameSaveRecorder(
+        GameType.CROWNS, savedStateHandle, saves, difficulty, mode, CrownsGameSaver.KEYS
+    )
     private val gestures = CrownsGestures()
     private var undoStack = UndoStack<CrownsBoard>(UNDO_LIMIT)
 
@@ -117,15 +123,9 @@ class CrownsViewModel @Inject constructor(
      * Classic: every cell already shown as a wrong crown in this puzzle. A crown placed there
      * again (by the player or by undo) shows as wrong without using another hint.
      */
-    private val revealedWrong = CrownsGameSaver.restoreRevealedWrong(savedStateHandle).toMutableSet()
+    private val revealedWrong = mutableSetOf<Int>()
 
-    private val _state = MutableStateFlow(
-        CrownsUiState(
-            difficulty = difficulty,
-            mode = mode,
-            isQuestionMode = CrownsGameSaver.restoreQuestionMode(savedStateHandle)
-        )
-    )
+    private val _state = MutableStateFlow(CrownsUiState(difficulty = difficulty, mode = mode))
     val state: StateFlow<CrownsUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
 
@@ -143,27 +143,16 @@ class CrownsViewModel @Inject constructor(
         viewModelScope.launch {
             if (!howToPlay.hasSeen(GameType.CROWNS).first()) setHowToPlayOpen(true)
         }
-        val puzzle = CrownsGameSaver.restorePuzzle(savedStateHandle)
-        if (puzzle == null) {
-            newPuzzle()
-        } else {
-            val board = CrownsGameSaver.restoreBoard(savedStateHandle, puzzle.size)
-            undoStack = UndoStack(UNDO_LIMIT, CrownsGameSaver.restoreUndo(savedStateHandle, puzzle.size))
-            _state.update {
-                it.copy(
-                    puzzle = puzzle,
-                    board = board,
-                    canUndo = undoStack.canUndo,
-                    conflictCells = conflictsOf(puzzle, board),
-                    wrongCrowns = revealedWrong intersect board.crowns,
-                    isSolved = session.value.showWin
-                )
-            }
+        when {
+            restoreGame() -> Unit
+            savedStateHandle.get<Boolean>(Screen.ARG_RESUME) == true -> resumeSavedGame()
+            else -> newPuzzle()
         }
     }
 
     fun newPuzzle() {
         gameSession.reset()
+        recorder.clear()
         undoStack.clear()
         revealedWrong.clear()
         CrownsGameSaver.clear(savedStateHandle)
@@ -186,7 +175,38 @@ class CrownsViewModel @Inject constructor(
             CrownsGameSaver.saveBoard(savedStateHandle, board)
             _state.update { it.copy(puzzle = puzzle, board = board, isGenerating = false) }
             gameSession.start()
+            recorder.record()
         }
+    }
+
+    /** Continue: loads the game saved on disk, or a new puzzle if it is gone. */
+    private fun resumeSavedGame() {
+        _state.update { it.copy(isGenerating = true) }
+        viewModelScope.launch {
+            if (recorder.restoreInto() && restoreGame()) gameSession.reloadSaved() else newPuzzle()
+        }
+    }
+
+    /** Shows the game kept in the SavedStateHandle. Returns false when it holds none. */
+    private fun restoreGame(): Boolean {
+        val puzzle = CrownsGameSaver.restorePuzzle(savedStateHandle) ?: return false
+        val board = CrownsGameSaver.restoreBoard(savedStateHandle, puzzle.size)
+        undoStack = UndoStack(UNDO_LIMIT, CrownsGameSaver.restoreUndo(savedStateHandle, puzzle.size))
+        revealedWrong.clear()
+        revealedWrong += CrownsGameSaver.restoreRevealedWrong(savedStateHandle)
+        _state.update {
+            it.copy(
+                puzzle = puzzle,
+                board = board,
+                isGenerating = false,
+                isQuestionMode = CrownsGameSaver.restoreQuestionMode(savedStateHandle),
+                canUndo = undoStack.canUndo,
+                conflictCells = conflictsOf(puzzle, board),
+                wrongCrowns = revealedWrong intersect board.crowns,
+                isSolved = GameSession.isWonIn(savedStateHandle)
+            )
+        }
+        return true
     }
 
     // ── Gestures (see CrownsGestures for the rules) ────────────────────────
@@ -222,6 +242,7 @@ class CrownsViewModel @Inject constructor(
         val enabled = !_state.value.isQuestionMode
         CrownsGameSaver.saveQuestionMode(savedStateHandle, enabled)
         _state.update { it.copy(isQuestionMode = enabled) }
+        recorder.record()
     }
 
     // ── Controls ────────────────────────────────────────────────────────────
@@ -340,6 +361,7 @@ class CrownsViewModel @Inject constructor(
     fun onScreenHidden() {
         isScreenVisible = false
         updateClock()
+        recorder.record()
     }
 
     /** The clock runs only while the board itself is in front of the player. */
@@ -407,6 +429,7 @@ class CrownsViewModel @Inject constructor(
                 errorCells = if (changedCells.any { cell -> cell in it.errorCells }) emptySet() else it.errorCells
             )
         }
+        recorder.record()
         if (isClassic && CrownsValidator.isSolved(puzzle, newBoard)) win()
         return true
     }
@@ -435,6 +458,7 @@ class CrownsViewModel @Inject constructor(
         _state.update { it.copy(isSolved = true) }
         play(SoundEvent.WIN)
         gameSession.complete(winDelay = if (motionSettings.animationsEnabled()) WIN_HIGHLIGHT else Duration.ZERO)
+        recorder.clear()
     }
 
     private fun conflictsOf(puzzle: CrownsPuzzle, board: CrownsBoard): Set<Int> =

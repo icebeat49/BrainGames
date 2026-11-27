@@ -17,6 +17,9 @@ internal object SudokuBoardSaver {
     private const val KEY_UNDO = "sudoku_undo"
     private const val INTS_PER_MOVE = 3
 
+    /** Every entry this saver writes, for the disk save. */
+    val KEYS = listOf(KEY_SOLUTION, KEY_GIVEN, KEY_CURRENT, KEY_NOTES, KEY_UNDO)
+
     fun save(handle: SavedStateHandle, board: SudokuBoard) {
         handle[KEY_SOLUTION] = board.solution.copyOf()
         handle[KEY_GIVEN] = board.given.copyOf()
@@ -58,7 +61,7 @@ internal object SudokuBoardSaver {
     }
 
     fun clear(handle: SavedStateHandle) {
-        listOf(KEY_SOLUTION, KEY_GIVEN, KEY_CURRENT, KEY_NOTES, KEY_UNDO).forEach { handle.remove<Any>(it) }
+        KEYS.forEach { handle.remove<Any>(it) }
     }
 
     private fun Set<Int>.toBitmask(): Int = fold(0) { mask, n -> mask or (1 shl n) }

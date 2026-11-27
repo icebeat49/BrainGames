@@ -21,6 +21,9 @@ internal object CrownsGameSaver {
 
     private val marks = CellMark.entries
 
+    /** Every entry this saver writes, for the disk save. */
+    val KEYS = listOf(KEY_SIZE, KEY_REGIONS, KEY_SOLUTION, KEY_MARKS, KEY_UNDO, KEY_REVEALED_WRONG, KEY_QUESTION_MODE)
+
     fun savePuzzle(handle: SavedStateHandle, puzzle: CrownsPuzzle) {
         handle[KEY_SIZE] = puzzle.size
         handle[KEY_REGIONS] = puzzle.regions

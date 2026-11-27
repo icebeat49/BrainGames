@@ -19,13 +19,13 @@ Background for steps 2, 4, 5 and 6 is in [DIAGNOSIS.md](DIAGNOSIS.md).
    - Technique-graded solver and grader, like Crowns; bank writer test producing ~250 puzzles per level.
    - Serve from the bank with a recent-history picker (reuse `RecentCrownsPuzzles`).
    - Hint consistent with the unique solution, ideally deduction-based.
-5. **Save & resume**
-   - One save per game, in its own typed DataStore file (`saves/<game>.json`) with kotlinx.serialization and `@Serializable` save DTOs (not the domain classes).
-   - Saved after each move and when the app goes to the background, on an application-scoped coroutine scope.
-   - `GameSession` gets `snapshot()` / `restore()` for time, hints and win state.
-   - "Continue / New game" when opening a game, using the saved difficulty and mode.
-   - Deleted on win.
-   - Kakuro's save is designed after step 4.
+5. ✅ **Save & resume** (unit-tested; not yet checked on a device): Sudoku, Crowns and Kakuro.
+   - One save per game, in its own typed DataStore file (`files/saves/<game>.save`), in `core/save/`.
+   - Changed from the first design: the save holds the same values each game already keeps in its `SavedStateHandle` (its saver's keys and `GameSession`'s), in a small versioned binary format. No kotlinx.serialization or DTOs were needed, and each game's existing saver stays the only place that encodes its board.
+   - Saved after each move and when the screen is left, on an application-scoped coroutine scope. Deleted on win and replaced by a new puzzle.
+   - The picker shows "Continue" (level, mode, time) above the levels; starting a new level over a saved game asks first.
+   - A save from another mode or level is never loaded into the wrong game.
+   - Saves are included in Android's default cloud backup; decide in step 8 whether to exclude them.
 6. **Stats**
    - Per game, per difficulty and per mode (Classic / Hardcore): games played, games won, best time, average time.
    - Stored in a separate typed DataStore (`stats.json`); keep total won time and compute the average.

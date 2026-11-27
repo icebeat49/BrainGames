@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.payfacto.braingames.core.data.PreferencesRepository
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
+import com.payfacto.braingames.core.save.GameSaveRecorder
+import com.payfacto.braingames.core.save.GameSaves
 import com.payfacto.braingames.core.session.GameSession
 import com.payfacto.braingames.core.session.SessionState
 import com.payfacto.braingames.core.ui.navigation.Screen
@@ -48,7 +51,8 @@ class SudokuViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val puzzleSource: SudokuPuzzleSource,
     repository: PreferencesRepository,
-    timeSource: TimeSource
+    timeSource: TimeSource,
+    saves: GameSaves
 ) : ViewModel() {
 
     private val difficulty = Difficulty.fromRouteArg(savedStateHandle[Screen.ARG_DIFFICULTY])
@@ -61,26 +65,26 @@ class SudokuViewModel @Inject constructor(
         maxHints = assists.maxHints,
         timeSource = timeSource
     )
-    private val undoStack: UndoStack<SudokuMove> =
-        UndoStack(initial = SudokuBoardSaver.restoreUndo(savedStateHandle))
-
-    private val _state = MutableStateFlow(
-        SudokuUiState(difficulty = difficulty, mode = mode, canUndo = undoStack.canUndo)
+    private val recorder = GameSaveRecorder(
+        GameType.SUDOKU, savedStateHandle, saves, difficulty, mode, SudokuBoardSaver.KEYS
     )
+    private var undoStack = UndoStack<SudokuMove>()
+
+    private val _state = MutableStateFlow(SudokuUiState(difficulty = difficulty, mode = mode))
     val state: StateFlow<SudokuUiState> = _state.asStateFlow()
     val session: StateFlow<SessionState> = gameSession.state
 
     init {
-        val restored = SudokuBoardSaver.restore(savedStateHandle)
-        if (restored == null) {
-            newPuzzle()
-        } else {
-            _state.update { it.copy(board = restored) }
+        when {
+            restoreGame() -> Unit
+            savedStateHandle.get<Boolean>(Screen.ARG_RESUME) == true -> resumeSavedGame()
+            else -> newPuzzle()
         }
     }
 
     fun newPuzzle() {
         gameSession.reset()
+        recorder.clear()
         undoStack.clear()
         SudokuBoardSaver.clear(savedStateHandle)
         _state.update {
@@ -98,7 +102,24 @@ class SudokuViewModel @Inject constructor(
             saveBoard(board)
             _state.update { it.copy(board = board, isGenerating = false) }
             gameSession.start()
+            recorder.record()
         }
+    }
+
+    /** Continue: loads the game saved on disk, or a new puzzle if it is gone. */
+    private fun resumeSavedGame() {
+        _state.update { it.copy(isGenerating = true) }
+        viewModelScope.launch {
+            if (recorder.restoreInto() && restoreGame()) gameSession.reloadSaved() else newPuzzle()
+        }
+    }
+
+    /** Shows the game kept in the SavedStateHandle. Returns false when it holds none. */
+    private fun restoreGame(): Boolean {
+        val board = SudokuBoardSaver.restore(savedStateHandle) ?: return false
+        undoStack = UndoStack(initial = SudokuBoardSaver.restoreUndo(savedStateHandle))
+        _state.update { it.copy(board = board, canUndo = undoStack.canUndo, isGenerating = false) }
+        return true
     }
 
     fun selectCell(index: Int) {
@@ -163,7 +184,7 @@ class SudokuViewModel @Inject constructor(
         val wrongCells = _state.value.board.wrongCells()
         if (wrongCells.isEmpty()) {
             _state.update { it.copy(failedCheck = null, errorCells = emptySet()) }
-            gameSession.complete()
+            win()
             return CheckResult.Solved
         }
         _state.update { it.copy(failedCheck = FailedCheck(wrongCells)) }
@@ -193,7 +214,10 @@ class SudokuViewModel @Inject constructor(
 
     /** Call when the game screen becomes visible / hidden, so the clock pauses in the background. */
     fun onScreenVisible() = gameSession.onForeground()
-    fun onScreenHidden() = gameSession.onBackground()
+    fun onScreenHidden() {
+        gameSession.onBackground()
+        recorder.record()
+    }
 
     /**
      * The only way a player move changes the board: records the cell's previous state for
@@ -211,11 +235,18 @@ class SudokuViewModel @Inject constructor(
         SudokuBoardSaver.save(savedStateHandle, board)
         saveUndo()
         _state.update { it.copy(board = board, canUndo = undoStack.canUndo, errorCells = emptySet()) }
+        recorder.record()
     }
 
     /** Classic declares the win as soon as the grid is right; Hardcore waits for Check. */
     private fun completeIfSolved(board: SudokuBoard) {
-        if (assists.autoDetectWin && board.isComplete()) gameSession.complete()
+        if (assists.autoDetectWin && board.isComplete()) win()
+    }
+
+    /** A won game is over: its save is deleted. */
+    private fun win() {
+        gameSession.complete()
+        recorder.clear()
     }
 
     private fun saveBoard(board: SudokuBoard) = SudokuBoardSaver.save(savedStateHandle, board)

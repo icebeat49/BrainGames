@@ -112,6 +112,20 @@ class GameSession(
 
     fun dismissWin() = setShowWin(false)
 
+    /**
+     * Reads time, hints and the playing and win flags again from the SavedStateHandle,
+     * after a saved game was copied into it.
+     */
+    fun reloadSaved() {
+        stopClock()
+        accumulatedMs = savedState[KEY_ELAPSED_MS] ?: 0L
+        isPlaying = savedState[KEY_PLAYING] ?: false
+        publishElapsed()
+        setHints(savedState[KEY_HINTS] ?: maxHints)
+        setShowWin(savedState[KEY_SHOW_WIN] ?: false)
+        updateClock()
+    }
+
     fun onForeground() {
         isForeground = true
         updateClock()
@@ -180,5 +194,17 @@ class GameSession(
         private const val KEY_HINTS = "session_hints"
         private const val KEY_PLAYING = "session_playing"
         private const val KEY_SHOW_WIN = "session_show_win"
+
+        /** The SavedStateHandle entries a disk save must keep. */
+        val SAVED_KEYS = listOf(KEY_ELAPSED_MS, KEY_HINTS, KEY_PLAYING, KEY_SHOW_WIN)
+
+        /** Whether the game in [handle] is being played: loaded and not yet won. */
+        fun isPlayingIn(handle: SavedStateHandle): Boolean = handle[KEY_PLAYING] ?: false
+
+        /** Whether the game in [handle] was won and its win screen is still due. */
+        fun isWonIn(handle: SavedStateHandle): Boolean = handle[KEY_SHOW_WIN] ?: false
+
+        fun elapsedSecondsIn(values: Map<String, Any>): Long =
+            (values[KEY_ELAPSED_MS] as? Long ?: 0L) / MS_PER_SECOND
     }
 }

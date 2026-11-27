@@ -19,6 +19,7 @@ import com.payfacto.braingames.feature.crowns.input.TapEvent
 import com.payfacto.braingames.feature.crowns.model.CrownsBoard
 import com.payfacto.braingames.feature.crowns.model.CrownsPuzzle
 import com.payfacto.braingames.feature.crowns.model.CellMark
+import com.payfacto.braingames.testutil.FakeGameSaves
 import com.payfacto.braingames.testutil.MainDispatcherRule
 import com.payfacto.braingames.testutil.FakePreferencesDataStore
 import com.payfacto.braingames.testutil.fakePreferencesRepository
@@ -56,13 +57,29 @@ class CrownsViewModelTest {
         val source = RecordingSource(puzzle)
         private val preferences = fakePreferencesRepository()
         private val motion = MotionSettings { animations }
+        val saves = FakeGameSaves()
         val howToPlay = HowToPlayPreferences(FakePreferencesDataStore()).apply {
             if (howToPlaySeen) runBlocking { markSeen(GameType.CROWNS) }
         }
 
+        private val routeMode = mode
+
         fun TestScope.newViewModel() =
-            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource, motion, howToPlay)
+            CrownsViewModel(savedState, source, preferences, testScheduler.timeSource, motion, howToPlay, saves)
                 .also { advanceUntilIdle() }
+
+        /** The game opened with Continue after the app was closed: a fresh SavedStateHandle, the same saves. */
+        fun TestScope.continueGame(): CrownsViewModel {
+            val handle = SavedStateHandle(
+                mapOf(
+                    Screen.ARG_DIFFICULTY to Difficulty.VERY_EASY.name,
+                    Screen.ARG_MODE to routeMode.name,
+                    Screen.ARG_RESUME to true
+                )
+            )
+            return CrownsViewModel(handle, source, preferences, testScheduler.timeSource, motion, howToPlay, saves)
+                .also { advanceUntilIdle() }
+        }
     }
 
     private var clock = 10_000L
@@ -776,6 +793,40 @@ class CrownsViewModelTest {
             assertEquals(GameMode.HARDCORE, restored.mode)
             assertEquals(emptyBoard, recreated.state.value.board)
         }
+
+    @Test
+    fun `continue after the app was closed restores the game and its shown wrong crowns`() =
+        runTest(mainDispatcher.dispatcher) {
+            val fixture = Fixture(GameMode.CLASSIC)
+            val original = with(fixture) { newViewModel() }
+            original.tap(cell(1, 1))
+            original.placeCrown(cell(4, 4))
+            original.toggleQuestionMode()
+            original.onScreenHidden()
+
+            val resumed = with(fixture) { continueGame() }
+            val restored = resumed.state.value
+
+            assertEquals(1, fixture.source.requests.size)
+            assertEquals(puzzle, restored.puzzle)
+            assertEquals(original.state.value.board, restored.board)
+            assertTrue(restored.isQuestionMode)
+            assertTrue(restored.canUndo)
+            assertEquals(setOf(cell(4, 4)), restored.wrongCrowns)
+            assertEquals(GameSession.DEFAULT_HINTS - 1, resumed.session.value.hintsRemaining)
+        }
+
+    @Test
+    fun `a won game is no longer saved`() = runTest(mainDispatcher.dispatcher) {
+        val fixture = Fixture(GameMode.CLASSIC)
+        val viewModel = with(fixture) { newViewModel() }
+
+        puzzle.solutionCells.forEach { viewModel.placeCrown(it) }
+        advanceUntilIdle()
+        viewModel.onScreenHidden()
+
+        assertEquals(null, fixture.saves[GameType.CROWNS])
+    }
 
     private class RecordingSource(private val puzzle: CrownsPuzzle) : CrownsPuzzleSource {
         val requests = mutableListOf<Difficulty>()

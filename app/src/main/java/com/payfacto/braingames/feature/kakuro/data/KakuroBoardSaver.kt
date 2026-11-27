@@ -18,6 +18,9 @@ internal object KakuroBoardSaver {
     private const val TYPE_CLUE = 1
     private const val TYPE_INPUT = 2
 
+    /** Every entry this saver writes, for the disk save. */
+    val KEYS = listOf(KEY_BOARD)
+
     fun save(handle: SavedStateHandle, board: KakuroBoard) {
         val data = IntArray(HEADER_SIZE + board.rows * board.cols * INTS_PER_CELL)
         data[0] = board.rows
