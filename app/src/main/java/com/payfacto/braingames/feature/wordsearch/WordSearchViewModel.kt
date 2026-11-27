@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 data class WordSearchUiState(
-    val board: WordSearchBoard = WordSearchBoard(Array(8) { CharArray(8) }, emptyList()),
+    val board: WordSearchBoard = WordSearchBoard(Array(12) { CharArray(12) }, emptyList()),
     val hintCell: Pair<Int, Int>? = null,
     val difficulty: Difficulty = Difficulty.MEDIUM,
     val isLoading: Boolean = false
@@ -83,13 +83,23 @@ class WordSearchViewModel @Inject constructor(
 
         val newWords = board.words.toMutableList()
         newWords[matchIdx] = newWords[matchIdx].copy(found = true)
-        val newBoard = board.copy(words = newWords)
-        saveBoard(newBoard)
-        _state.update { it.copy(board = newBoard, hintCell = null) }
-
-        // Leave time to see the revealed hidden word before the win screen appears.
-        if (newBoard.isComplete()) gameSession.complete(winDelay = WIN_REVEAL_DELAY)
+        updateBoard(board.copy(words = newWords))
         return true
+    }
+
+    /** The game is won by typing the secret, whether or not every word was found first. */
+    fun checkSecret(guess: String): Boolean {
+        val board = _state.value.board
+        if (board.secretFound || !board.isSecret(guess)) return false
+        updateBoard(board.copy(secretFound = true))
+        // Leave time to see the secret revealed in the grid before the win screen appears.
+        gameSession.complete(winDelay = WIN_REVEAL_DELAY)
+        return true
+    }
+
+    private fun updateBoard(board: WordSearchBoard) {
+        saveBoard(board)
+        _state.update { it.copy(board = board, hintCell = null) }
     }
 
     fun useHint(): Boolean {

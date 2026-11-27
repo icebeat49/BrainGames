@@ -6,7 +6,9 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -25,7 +27,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import com.payfacto.braingames.feature.wordsearch.model.WordEntry
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.floor
 
 @Composable
@@ -35,6 +39,7 @@ fun WordSearchGrid(
     primaryColor: Color,
     onSurface: Color,
     revealHiddenWord: Boolean = false,
+    modifier: Modifier = Modifier,
     onSelectionComplete: (List<Pair<Int, Int>>) -> Unit
 ) {
     var dragStart by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -48,40 +53,32 @@ fun WordSearchGrid(
     )
 
     Canvas(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .aspectRatio(board.cols.toFloat() / board.rows.toFloat())
             .pointerInput(board) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        val cellW = size.width / board.cols.toFloat()
-                        val cellH = size.height / board.rows.toFloat()
-                        val col = floor(offset.x / cellW).toInt().coerceIn(0, board.cols - 1)
-                        val row = floor(offset.y / cellH).toInt().coerceIn(0, board.rows - 1)
-                        dragStart = Pair(row, col)
-                        dragCurrent = Pair(row, col)
-                    },
-                    onDrag = { change, _ ->
-                        val cellW = size.width / board.cols.toFloat()
-                        val cellH = size.height / board.rows.toFloat()
-                        val col = floor(change.position.x / cellW).toInt().coerceIn(0, board.cols - 1)
-                        val row = floor(change.position.y / cellH).toInt().coerceIn(0, board.rows - 1)
-                        dragCurrent = Pair(row, col)
-                    },
-                    onDragEnd = {
-                        val start = dragStart
-                        val end = dragCurrent
-                        if (start != null && end != null) {
-                            onSelectionComplete(getCellsOnLine(start, end))
-                        }
-                        dragStart = null
-                        dragCurrent = null
-                    },
-                    onDragCancel = {
-                        dragStart = null
-                        dragCurrent = null
-                    }
+                fun cellAt(position: Offset) = Pair(
+                    floor(position.y / (size.height / board.rows.toFloat())).toInt().coerceIn(0, board.rows - 1),
+                    floor(position.x / (size.width / board.cols.toFloat())).toInt().coerceIn(0, board.cols - 1)
                 )
+                // The selection starts where the finger touches down, not where it has moved past
+                // the touch slop (~8dp): on 18×18 cells that would already be the next letter.
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    dragStart = cellAt(down.position)
+                    dragCurrent = dragStart
+                    val completed = drag(down.id) { change ->
+                        change.consume()
+                        dragCurrent = cellAt(change.position)
+                    }
+                    val start = dragStart
+                    val end = dragCurrent
+                    if (completed && start != null && end != null) {
+                        onSelectionComplete(getCellsOnLine(start, end, board.rows, board.cols))
+                    }
+                    dragStart = null
+                    dragCurrent = null
+                }
             }
     ) {
         val cellW = size.width / board.cols.toFloat()
@@ -105,7 +102,7 @@ fun WordSearchGrid(
 
         // Current drag selection
         if (dragStart != null && dragCurrent != null) {
-            getCellsOnLine(dragStart!!, dragCurrent!!).forEach { (r, c) ->
+            getCellsOnLine(dragStart!!, dragCurrent!!, board.rows, board.cols).forEach { (r, c) ->
                 drawRect(
                     color = primaryColor.copy(alpha = 0.25f),
                     topLeft = Offset(c * cellW, r * cellH),
@@ -168,12 +165,20 @@ private fun DrawScope.drawWordHighlight(entry: WordEntry, cellW: Float, cellH: F
     }
 }
 
-private fun getCellsOnLine(start: Pair<Int, Int>, end: Pair<Int, Int>): List<Pair<Int, Int>> {
+/**
+ * The cells from [start] towards [end], snapped to the nearest of the eight directions and cut
+ * short at the grid edge, so a slanted drag still selects a straight line inside the grid.
+ */
+internal fun getCellsOnLine(start: Pair<Int, Int>, end: Pair<Int, Int>, rows: Int, cols: Int): List<Pair<Int, Int>> {
     val dRow = end.first - start.first
     val dCol = end.second - start.second
     if (dRow == 0 && dCol == 0) return listOf(start)
-    val normRow = if (dRow > 0) 1 else if (dRow < 0) -1 else 0
-    val normCol = if (dCol > 0) 1 else if (dCol < 0) -1 else 0
-    val steps = maxOf(abs(dRow), abs(dCol))
-    return (0..steps).map { i -> Pair(start.first + normRow * i, start.second + normCol * i) }
+    val octant = Math.floorMod(Math.round(atan2(dRow.toDouble(), dCol.toDouble()) / (PI / 4)).toInt(), 8)
+    val (stepRow, stepCol) = OCTANT_STEPS[octant]
+    var steps = maxOf(abs(dRow), abs(dCol))
+    while (steps > 0 && (start.first + stepRow * steps !in 0 until rows || start.second + stepCol * steps !in 0 until cols)) steps--
+    return (0..steps).map { i -> Pair(start.first + stepRow * i, start.second + stepCol * i) }
 }
+
+/** (row, col) step per 45° sector of atan2(row, col): right, then clockwise on screen. */
+private val OCTANT_STEPS = listOf(0 to 1, 1 to 1, 1 to 0, 1 to -1, 0 to -1, -1 to -1, -1 to 0, -1 to 1)

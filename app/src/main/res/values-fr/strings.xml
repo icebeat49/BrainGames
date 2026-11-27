@@ -102,14 +102,22 @@
 
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d mots trouvés</string>
-    <string name="wordsearch_hidden_word">Mot caché</string>
-    <plurals name="wordsearch_letters_remaining">
-        <item quantity="one">%1$d lettre restante</item>
-        <item quantity="many">%1$d lettres restantes</item>
-        <item quantity="other">%1$d lettres restantes</item>
+    <string name="wordsearch_secret_title">Mot secret</string>
+    <string name="wordsearch_secret_explanation">Les lettres qu’aucun mot n’utilise, lues de gauche à droite et de haut en bas, forment le mot secret.</string>
+    <plurals name="wordsearch_secret_letters">
+        <item quantity="one">%1$d lettre</item>
+        <item quantity="many">%1$d lettres</item>
+        <item quantity="other">%1$d lettres</item>
     </plurals>
-    <string name="wordsearch_clue">Indice : %1$s</string>
-
+    <plurals name="wordsearch_secret_words">
+        <item quantity="one">%1$d mot</item>
+        <item quantity="many">%1$d mots</item>
+        <item quantity="other">%1$d mots</item>
+    </plurals>
+    <string name="wordsearch_secret_input">Votre réponse</string>
+    <string name="wordsearch_secret_check">Vérifier</string>
+    <string name="wordsearch_secret_wrong">Ce n’est pas ça. Continuez à chercher.</string>
+    <string name="wordsearch_secret_found">Trouvé : %1$s</string>
     <!-- Actions partagées -->
     <string name="action_clear">Effacer</string>
     <string name="action_notes">Notes</string>

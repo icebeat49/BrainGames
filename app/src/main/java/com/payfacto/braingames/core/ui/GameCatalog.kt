@@ -13,7 +13,7 @@ import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.crowns.engine.CrownsDifficulty
 import com.payfacto.braingames.feature.kakuro.engine.KakuroDifficulty
 import com.payfacto.braingames.feature.crowns.ui.CrownIcon
-import com.payfacto.braingames.feature.wordsearch.data.WordSearchGenerator
+import com.payfacto.braingames.feature.wordsearch.data.WordSearchDifficulty
 
 /** How a game is presented in menus. */
 data class GameInfo(
@@ -52,7 +52,7 @@ object GameCatalog {
             titleRes = R.string.home_play_wordsearch,
             descriptionRes = R.string.home_desc_wordsearch,
             icon = Icons.Default.Search,
-            gridSize = WordSearchGenerator::gridSizeFor
+            gridSize = WordSearchDifficulty::sizeFor
         )
         GameType.CROWNS -> GameInfo(
             titleRes = R.string.home_play_crowns,

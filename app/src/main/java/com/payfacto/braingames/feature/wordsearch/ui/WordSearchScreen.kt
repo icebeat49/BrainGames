@@ -1,32 +1,49 @@
 package com.payfacto.braingames.feature.wordsearch.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemGestures
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -39,6 +56,7 @@ import com.payfacto.braingames.core.ui.components.KeepScreenOn
 import com.payfacto.braingames.core.ui.components.WinAnimationOverlay
 import com.payfacto.braingames.core.ui.components.WinSoundEffect
 import com.payfacto.braingames.feature.wordsearch.WordSearchViewModel
+import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
 
 @Composable
 fun WordSearchScreen(
@@ -60,7 +78,8 @@ fun WordSearchScreen(
 
     val found = state.board.words.count { it.found }
     val total = state.board.words.size
-    val isComplete = state.board.isComplete()
+    // The leftover letters light up once every word is crossed off, or once the secret is found.
+    val revealSecret = state.board.allWordsFound() || state.board.secretFound
 
     Scaffold(
         topBar = {
@@ -93,21 +112,16 @@ fun WordSearchScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    // Edge-to-edge: the window no longer shrinks for the keyboard, so make room
+                    // for it here; the focused answer field then scrolls into view above it.
+                    .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(8.dp),
+                    .padding(CONTENT_PADDING)
+                    // Counts this padding toward the grid's side-swipe margin below, instead of
+                    // adding the margin on top of it: the grid gets wider by twice the padding.
+                    .consumeWindowInsets(PaddingValues(CONTENT_PADDING)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Theme name
-                if (state.board.theme.isNotEmpty()) {
-                    Text(
-                        text = state.board.theme,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(Modifier.height(2.dp))
-                }
-
                 Text(
                     text = stringResource(R.string.wordsearch_words_found, found, total),
                     style = MaterialTheme.typography.bodyMedium,
@@ -120,7 +134,12 @@ fun WordSearchScreen(
                     hintCell = state.hintCell,
                     primaryColor = MaterialTheme.colorScheme.primary,
                     onSurface = MaterialTheme.colorScheme.onSurface,
-                    revealHiddenWord = isComplete,
+                    revealHiddenWord = revealSecret,
+                    // Keeps the edge columns out of the side strips where a swipe means Back,
+                    // so a word can be dragged from them (only the page padding with 3-button navigation).
+                    modifier = Modifier.windowInsetsPadding(
+                        WindowInsets.systemGestures.only(WindowInsetsSides.Horizontal)
+                    ),
                     onSelectionComplete = { cells ->
                         val matched = viewModel.checkSelection(cells)
                         if (matched) soundManager.play(SoundEvent.CORRECT)
@@ -131,11 +150,13 @@ fun WordSearchScreen(
                 Spacer(Modifier.height(10.dp))
 
                 if (state.board.hiddenWord.isNotEmpty()) {
-                    HiddenWordCard(
-                        hiddenWord = state.board.hiddenWord,
-                        hint = state.board.hint,
-                        remainingLetters = state.board.remainingLetterCount(),
-                        isRevealed = isComplete
+                    SecretWordCard(
+                        board = state.board,
+                        onCheck = { guess ->
+                            val right = viewModel.checkSecret(guess)
+                            soundManager.play(if (right) SoundEvent.CORRECT else SoundEvent.ERROR)
+                            right
+                        }
                     )
                     Spacer(Modifier.height(10.dp))
                 }
@@ -160,88 +181,113 @@ fun WordSearchScreen(
 }
 
 @Composable
-private fun HiddenWordCard(
-    hiddenWord: String,
-    hint: String,
-    remainingLetters: Int,
-    isRevealed: Boolean
+private fun SecretWordCard(
+    board: WordSearchBoard,
+    onCheck: (String) -> Boolean
 ) {
+    var guess by rememberSaveable(board.hiddenWord) { mutableStateOf("") }
+    var wrongGuess by rememberSaveable(board.hiddenWord) { mutableStateOf(false) }
+    val check = {
+        if (guess.isNotBlank()) wrongGuess = !onCheck(guess)
+    }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.secondaryContainer,
         tonalElevation = 2.dp
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.wordsearch_hidden_word),
+                    text = stringResource(R.string.wordsearch_secret_title),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-                if (!isRevealed) {
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.wordsearch_letters_remaining, remainingLetters, remainingLetters
-                        ),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                Text(
+                    text = secretSizeLabel(board),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
+            Spacer(Modifier.height(4.dp))
 
-            Spacer(Modifier.height(8.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                hiddenWord.forEach { ch ->
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .background(
-                                color = if (isRevealed)
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                                else
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = if (isRevealed)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.outline,
-                                shape = RoundedCornerShape(4.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (isRevealed) ch.toString() else "_",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = if (isRevealed) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isRevealed)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+            if (board.secretFound) {
+                Text(
+                    text = stringResource(R.string.wordsearch_secret_found, board.hiddenWord),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                return@Column
             }
-
-            Spacer(Modifier.height(6.dp))
 
             Text(
-                text = stringResource(R.string.wordsearch_clue, hint),
+                text = stringResource(R.string.wordsearch_secret_explanation),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f)
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
             )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                OutlinedTextField(
+                    value = guess,
+                    onValueChange = {
+                        guess = it
+                        wrongGuess = false
+                    },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.wordsearch_secret_input)) },
+                    isError = wrongGuess,
+                    // Part of the field, so it stays in view above the keyboard.
+                    supportingText = if (wrongGuess) {
+                        { Text(stringResource(R.string.wordsearch_secret_wrong)) }
+                    } else null,
+                    // Shown in capitals like the grid; the text itself is left as typed, since rewriting
+                    // it under the keyboard's composition drops letters.
+                    visualTransformation = UppercaseTransformation,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { check() })
+                )
+                // Top-aligned so the message under the field does not push it down; the offset
+                // lines it up with the field's outline, which sits below the floating label.
+                Button(onClick = check, enabled = guess.isNotBlank(), modifier = Modifier.padding(top = 12.dp)) {
+                    Text(stringResource(R.string.wordsearch_secret_check))
+                }
+            }
         }
     }
 }
+
+/** "9 letters", or "11 letters · 2 words" for a phrase. */
+@Composable
+private fun secretSizeLabel(board: WordSearchBoard): String {
+    val letters = pluralStringResource(
+        R.plurals.wordsearch_secret_letters, board.secretLetterCount, board.secretLetterCount
+    )
+    if (board.secretWordCount <= 1) return letters
+    val words = pluralStringResource(
+        R.plurals.wordsearch_secret_words, board.secretWordCount, board.secretWordCount
+    )
+    return "$letters · $words"
+}
+
+private object UppercaseTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText =
+        // Char by char, so the length never changes (uppercase() turns "ß" into "SS").
+        TransformedText(AnnotatedString(String(CharArray(text.length) { text[it].uppercaseChar() })), OffsetMapping.Identity)
+}
+
+private val CONTENT_PADDING = 8.dp

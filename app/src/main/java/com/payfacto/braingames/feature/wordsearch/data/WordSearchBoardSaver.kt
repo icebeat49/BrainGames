@@ -13,21 +13,19 @@ import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
 internal object WordSearchBoardSaver {
     private const val KEY_GRID = "ws_grid"
     private const val KEY_WORDS = "ws_words"
-    private const val KEY_THEME = "ws_theme"
     private const val KEY_HIDDEN_WORD = "ws_hidden_word"
-    private const val KEY_HINT = "ws_hint"
     private const val KEY_HIDDEN_CELLS = "ws_hidden_cells"
+    private const val KEY_SECRET_FOUND = "ws_secret_found"
     private const val SEPARATOR = "|"
 
     fun save(handle: SavedStateHandle, board: WordSearchBoard) {
         handle[KEY_GRID] = Array(board.rows) { r -> String(board.grid[r]) }
         handle[KEY_WORDS] = board.words.map { it.encode() }.toTypedArray()
-        handle[KEY_THEME] = board.theme
         handle[KEY_HIDDEN_WORD] = board.hiddenWord
-        handle[KEY_HINT] = board.hint
         handle[KEY_HIDDEN_CELLS] = board.hiddenWordCells
             .flatMap { (r, c) -> listOf(r, c) }
             .toIntArray()
+        handle[KEY_SECRET_FOUND] = board.secretFound
     }
 
     fun restore(handle: SavedStateHandle): WordSearchBoard? {
@@ -37,15 +35,14 @@ internal object WordSearchBoardSaver {
         return WordSearchBoard(
             grid = Array(grid.size) { r -> grid[r].toCharArray() },
             words = words.map { decodeWord(it) },
-            theme = handle[KEY_THEME] ?: "",
             hiddenWord = handle[KEY_HIDDEN_WORD] ?: "",
-            hint = handle[KEY_HINT] ?: "",
-            hiddenWordCells = hiddenCells.toList().chunked(2) { (r, c) -> Pair(r, c) }
+            hiddenWordCells = hiddenCells.toList().chunked(2) { (r, c) -> Pair(r, c) },
+            secretFound = handle[KEY_SECRET_FOUND] ?: false,
         )
     }
 
     fun clear(handle: SavedStateHandle) {
-        listOf(KEY_GRID, KEY_WORDS, KEY_THEME, KEY_HIDDEN_WORD, KEY_HINT, KEY_HIDDEN_CELLS)
+        listOf(KEY_GRID, KEY_WORDS, KEY_HIDDEN_WORD, KEY_HIDDEN_CELLS, KEY_SECRET_FOUND)
             .forEach { handle.remove<Any>(it) }
     }
 

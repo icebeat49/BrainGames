@@ -6,7 +6,11 @@ data class WordEntry(
     val startCol: Int,
     val direction: Direction,
     val found: Boolean = false
-)
+) {
+    /** The (row, col) of each letter, first to last. */
+    fun cells(): List<Pair<Int, Int>> =
+        word.indices.map { i -> Pair(startRow + i * direction.dRow, startCol + i * direction.dCol) }
+}
 
 enum class Direction(val dRow: Int, val dCol: Int) {
     RIGHT(0, 1),

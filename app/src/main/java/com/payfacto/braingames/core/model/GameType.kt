@@ -4,6 +4,6 @@ package com.payfacto.braingames.core.model
 enum class GameType(val levels: List<Difficulty> = Difficulty.STANDARD) {
     SUDOKU,
     KAKURO,
-    WORD_SEARCH,
+    WORD_SEARCH(listOf(Difficulty.MEDIUM, Difficulty.EXPERT)),
     CROWNS(Difficulty.STANDARD + Difficulty.MASTER)
 }

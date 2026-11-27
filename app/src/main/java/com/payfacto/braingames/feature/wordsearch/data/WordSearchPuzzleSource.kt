@@ -1,10 +1,10 @@
 package com.payfacto.braingames.feature.wordsearch.data
 
-import android.content.Context
+import com.payfacto.braingames.core.data.RecentPuzzles
 import com.payfacto.braingames.core.locale.AppLanguage
 import com.payfacto.braingames.core.model.Difficulty
+import com.payfacto.braingames.core.model.GameType
 import com.payfacto.braingames.feature.wordsearch.model.WordSearchBoard
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -14,24 +14,26 @@ interface WordSearchPuzzleSource {
     suspend fun newPuzzle(difficulty: Difficulty): WordSearchBoard
 }
 
-class GeneratedWordSearchPuzzleSource @Inject constructor(
-    @ApplicationContext private val appContext: Context
+/**
+ * Serves puzzles from the bundled bank of the app language (French, or English for any other),
+ * at random but never one of the recent ones for that size.
+ */
+class BundledWordSearchPuzzleSource @Inject constructor(
+    private val bank: WordSearchPuzzleBank,
+    private val recent: RecentPuzzles
 ) : WordSearchPuzzleSource {
 
     override suspend fun newPuzzle(difficulty: Difficulty): WordSearchBoard {
-        // Words, themes and clues follow the app language, not the phone's.
-        val context = AppLanguage.localizedContext(appContext)
-        return withContext(Dispatchers.Default) {
-            val gridSize = WordSearchGenerator.gridSizeFor(difficulty)
-            val maxWordLen = gridSize.coerceAtMost(12)
-            val words = WordBank.getWords(context, maxWordLen)
-            val candidates = PuzzleBank.getPuzzles(context).shuffled()
-
-            // Try each candidate puzzle until one yields a verified board (no random
-            // filler is ever produced — a board either satisfies the rules or is null).
-            candidates.firstNotNullOfOrNull { puzzle ->
-                WordSearchGenerator.generate(words, puzzle, difficulty)
-            } ?: FallbackPuzzles.get(context, difficulty)
+        val language = if (AppLanguage.displayLocale().language == FRENCH) FRENCH else ENGLISH
+        return withContext(Dispatchers.IO) {
+            val size = WordSearchDifficulty.sizeFor(difficulty)
+            val puzzles = bank.puzzles(language, size)
+            puzzles[recent.pick(GameType.WORD_SEARCH, size, puzzles.size)].toBoard()
         }
+    }
+
+    private companion object {
+        const val FRENCH = "fr"
+        const val ENGLISH = "en"
     }
 }

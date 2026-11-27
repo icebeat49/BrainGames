@@ -8,7 +8,7 @@ import com.payfacto.braingames.feature.kakuro.data.BundledKakuroPuzzleSource
 import com.payfacto.braingames.feature.kakuro.data.KakuroPuzzleSource
 import com.payfacto.braingames.feature.sudoku.data.GeneratedSudokuPuzzleSource
 import com.payfacto.braingames.feature.sudoku.data.SudokuPuzzleSource
-import com.payfacto.braingames.feature.wordsearch.data.GeneratedWordSearchPuzzleSource
+import com.payfacto.braingames.feature.wordsearch.data.BundledWordSearchPuzzleSource
 import com.payfacto.braingames.feature.wordsearch.data.WordSearchPuzzleSource
 import dagger.Binds
 import dagger.Module
@@ -28,7 +28,7 @@ abstract class GameModule {
     abstract fun bindKakuroPuzzleSource(impl: BundledKakuroPuzzleSource): KakuroPuzzleSource
 
     @Binds
-    abstract fun bindWordSearchPuzzleSource(impl: GeneratedWordSearchPuzzleSource): WordSearchPuzzleSource
+    abstract fun bindWordSearchPuzzleSource(impl: BundledWordSearchPuzzleSource): WordSearchPuzzleSource
 
     @Binds
     abstract fun bindCrownsPuzzleSource(impl: BundledCrownsPuzzleSource): CrownsPuzzleSource

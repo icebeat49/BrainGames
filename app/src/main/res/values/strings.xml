@@ -101,13 +101,20 @@
 
     <!-- Word Search -->
     <string name="wordsearch_words_found">%1$d / %2$d words found</string>
-    <string name="wordsearch_hidden_word">Hidden word</string>
-    <plurals name="wordsearch_letters_remaining">
-        <item quantity="one">%1$d letter left</item>
-        <item quantity="other">%1$d letters left</item>
+    <string name="wordsearch_secret_title">Secret word</string>
+    <string name="wordsearch_secret_explanation">The letters no word uses, read left to right and top to bottom, spell the secret.</string>
+    <plurals name="wordsearch_secret_letters">
+        <item quantity="one">%1$d letter</item>
+        <item quantity="other">%1$d letters</item>
     </plurals>
-    <string name="wordsearch_clue">Clue: %1$s</string>
-
+    <plurals name="wordsearch_secret_words">
+        <item quantity="one">%1$d word</item>
+        <item quantity="other">%1$d words</item>
+    </plurals>
+    <string name="wordsearch_secret_input">Your answer</string>
+    <string name="wordsearch_secret_check">Check</string>
+    <string name="wordsearch_secret_wrong">Not quite. Keep looking.</string>
+    <string name="wordsearch_secret_found">You found it: %1$s</string>
     <!-- Shared actions -->
     <string name="action_clear">Clear</string>
     <string name="action_notes">Notes</string>
