@@ -94,8 +94,8 @@ private fun DrawScope.drawGrid(
                 )
             }
 
-            // Conflict highlight
-            if (assists.showConflicts && board.conflictsAt(idx)) {
+            // Conflict and wrong-digit highlight
+            if ((assists.showConflicts && board.conflictsAt(idx)) || (assists.showWrongDigits && board.isWrongAt(idx))) {
                 drawRect(
                     color = colors.error.copy(alpha = 0.2f),
                     topLeft = Offset(col * cellSize, row * cellSize),
@@ -117,7 +117,8 @@ private fun DrawScope.drawGrid(
             val value = board.current[idx]
             if (value != 0) {
                 val isGiven = board.given[idx]
-                val isConflict = assists.showConflicts && board.conflictsAt(idx)
+                val isConflict = (assists.showConflicts && board.conflictsAt(idx)) ||
+                    (assists.showWrongDigits && board.isWrongAt(idx))
                 textPaint.color = when {
                     idx in errorCells -> colors.error.toArgb()
                     isConflict -> colors.error.toArgb()

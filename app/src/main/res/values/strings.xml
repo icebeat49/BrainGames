@@ -84,7 +84,7 @@
     <string name="mode_classic">Classic</string>
     <string name="mode_hardcore">Hardcore</string>
     <string name="mode_hardcore_label">Hardcore mode</string>
-    <string name="sudoku_mode_classic_description">Highlights, conflict marks and hints.</string>
+    <string name="sudoku_mode_classic_description">Highlights, mistakes shown in red and hints.</string>
     <string name="sudoku_mode_hardcore_description">Pen and paper: no help at all. Check your grid when it is full.</string>
 
     <!-- Check (Hardcore, shared) -->

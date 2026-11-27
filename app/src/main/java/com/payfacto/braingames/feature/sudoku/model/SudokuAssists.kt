@@ -10,6 +10,8 @@ data class SudokuAssists(
     val highlightPeers: Boolean,
     val highlightSameNumber: Boolean,
     val showConflicts: Boolean,
+    /** A digit that isn't the solution's is shown in red as soon as it is written. */
+    val showWrongDigits: Boolean,
     /** 0 hides the hint button and makes useHint() a no-op. */
     val maxHints: Int,
     /** false: the player taps Check when the grid is full. */
@@ -28,6 +30,7 @@ data class SudokuAssists(
             highlightPeers = true,
             highlightSameNumber = true,
             showConflicts = true,
+            showWrongDigits = true,
             maxHints = 5,
             autoDetectWin = true,
             clearCellNotesOnEntry = true,
@@ -40,6 +43,7 @@ data class SudokuAssists(
             highlightPeers = false,
             highlightSameNumber = false,
             showConflicts = false,
+            showWrongDigits = false,
             maxHints = 0,
             autoDetectWin = false,
             clearCellNotesOnEntry = true,

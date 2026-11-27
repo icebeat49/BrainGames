@@ -14,6 +14,9 @@ data class SudokuBoard(
     fun isFilled(): Boolean = current.none { it == 0 }
 
     /** Indices whose value differs from the solution; empty cells count as wrong. */
+    /** A digit the player wrote that isn't the solution's. Empty and given cells are never wrong. */
+    fun isWrongAt(index: Int): Boolean = !given[index] && current[index] != 0 && current[index] != solution[index]
+
     fun wrongCells(): Set<Int> = current.indices.filterTo(LinkedHashSet()) { current[it] != solution[it] }
 
     /** A copy with one cell's value and notes replaced. */

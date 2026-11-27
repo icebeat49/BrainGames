@@ -36,6 +36,7 @@ class SudokuClassicTest {
                 highlightPeers = true,
                 highlightSameNumber = true,
                 showConflicts = true,
+                showWrongDigits = true,
                 maxHints = GameSession.DEFAULT_HINTS,
                 autoDetectWin = true,
                 clearCellNotesOnEntry = true,
@@ -95,6 +96,18 @@ class SudokuClassicTest {
         viewModel.write(cell = 1, value = 9)
 
         assertTrue(viewModel.state.value.board.conflictsAt(1))
+    }
+
+    @Test
+    fun `a wrong digit is marked as wrong`() = runTest(mainDispatcher.dispatcher) {
+        val viewModel = with(fixture) { newViewModel() }
+        viewModel.write(cell = 0, value = fixture.wrongValueFor(0))
+        viewModel.write(cell = 1, value = fixture.solution[1])
+
+        val board = viewModel.state.value.board
+        assertTrue(board.isWrongAt(0))
+        assertFalse(board.isWrongAt(1))
+        assertFalse("given cells are never wrong", board.isWrongAt(8))
     }
 
     @Test
